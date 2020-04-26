@@ -4,19 +4,19 @@ import interact from "interactjs";
 
 const numLeds = 5;
 
-function Led({ ledX, ledY, style }) {
+function Led({ ledX, ledY, ledNumber }) {
   return (
-    <svg height="100%" width="100%" style={style}>
-      <circle
-        cx={ledX}
-        cy={ledY}
-        r="10"
-        stroke="white"
-        stroke-width="1"
-        fill="rgba(255, 0, 0, 0.8)"
-        className="led"
-      />
-    </svg>
+    <circle
+      cx={ledX}
+      cy={ledY}
+      r="10"
+      stroke="white"
+      stroke-width="1"
+      fill="rgba(255, 0, 0, 0.8)"
+      className={"led" + ledNumber}
+      id={"led" + ledNumber}
+
+    />
   );
 }
 
@@ -26,8 +26,14 @@ class FileInputOrImage extends React.Component {
     this.handleSubmit = this.handleSubmit.bind(this);
     this.handleLedMove = this.handleLedMove.bind(this);
     this.fileInput = React.createRef();
-    this.state = { ledX: 50, ledY: 50, localFileUrl: "" };
+    let state = { localFileUrl: "" };
+
+    for (let i = 0; i < numLeds; i++) {
+      state["led" + i] = { x: 50 + i * 20, y: 50 };
+    }
+    this.state = state;
   }
+
   handleSubmit(event) {
     event.preventDefault();
     const imgUrl = URL.createObjectURL(this.fileInput.current.files[0]);
@@ -37,20 +43,26 @@ class FileInputOrImage extends React.Component {
   }
 
   handleLedMove(event) {
-    this.setState({ ledX: this.state.ledX + event.dx });
-    this.setState({ ledY: this.state.ledY + event.dy });
+    const keyName = event.target.id
+    this.setState({
+      [keyName]: {
+        x: this.state[keyName].x + event.dx,
+        y: this.state[keyName].y + event.dy,
+      },
+    });
   }
 
   componentDidMount() {
-    window.context = this.ctx;
-    interact(".led").draggable({
-      listeners: {
-        start(event) {
-          console.log(event.type, event.target);
+    for (let i = 0; i < numLeds; i++) {
+      interact(".led" + i).draggable({
+        listeners: {
+          start(event) {
+            console.log(event.type, event.target);
+          },
+          move: this.handleLedMove,
         },
-        move: this.handleLedMove,
-      },
-    });
+      });
+    }
   }
 
   componentDidUpdate() {
@@ -79,6 +91,16 @@ class FileInputOrImage extends React.Component {
       },
     };
 
+    const leds = [...Array(numLeds).keys()].map((idx) => {
+      return (
+        <Led
+          ledX={this.state["led" + idx].x}
+          ledY={this.state["led" + idx].y}
+          ledNumber={idx}
+        />
+      );
+    });
+
     return this.state.localFileUrl.length ? (
       <div style={style.imgOverlayWrap}>
         <img
@@ -88,12 +110,18 @@ class FileInputOrImage extends React.Component {
           alt="no image found"
           style={style.imgOverlayWrapImg}
         />
-        <Led {...this.state} style={style.imgOverlayWrapSvg} />
+        <svg height="100%" width="100%" style={style.imgOverlayWrapSvg}>
+          {leds}
+        </svg>
       </div>
     ) : (
-        <form onSubmit={this.handleSubmit}>
+      <form onSubmit={this.handleSubmit}>
         <label>
-          <p>{this.state ? "Nice pic" : "Upload a file of your wall"}</p>
+          <p>
+            {this.state.localFileUrl.length
+              ? "Nice pic"
+              : "Upload a file of your wall"}
+          </p>
           <input type="file" ref={this.fileInput} />
         </label>
         <br />
