@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
 import Constants from 'expo-constants';
+import lbcsApi from './api';
 
 // or any pure javascript modules available in npm
 import { Avatar, Appbar, Menu } from 'react-native-paper';
 
-function Cell(props) {
+function Cell({ ledNumber }) {
   const [selected, setSelected] = useState(0);
+  const handleSelect = (prevState) => {
+    lbcsApi.setLed(ledNumber, !prevState).then(r => r.json()).then(d => console.log(d))
+    setSelected(!prevState)
+  }
+
   const cellStyle =   {
     flex: 1,
     backgroundColor: selected ? "blue" : "skyBlue",
@@ -16,18 +22,17 @@ function Cell(props) {
   }
   
   
-  return <TouchableOpacity style={cellStyle} onPress={() => setSelected(prevState => !prevState)} ></TouchableOpacity>
+  return <TouchableOpacity style={cellStyle} onPress={() => setSelected(handleSelect)} ></TouchableOpacity>
 }
 
-function Row(props) {
-  const cells = Array(props.cols).fill(null).map(x => <Cell columns={props.cols}/>)  
+function Row({ cols, startIndex }) {
+  const cells = Array(cols).fill(null).map((_, i) => <Cell columns={cols} ledNumber={startIndex + i}/>)  
 
   return <View style={styles.row}>{cells}</View>
 }
 
 function Grid(props) {
-  const width = 100 / props.cols;
-  const rows = Array(props.rows).fill(null).map(x => <Row cols={props.cols}/>)  
+  const rows = Array(props.rows).fill(null).map((_, i) => <Row cols={props.cols} startIndex={props.cols * i}/>)  
   return <View style={styles.container}>{rows}</View>
 }
 

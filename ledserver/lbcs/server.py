@@ -1,16 +1,15 @@
-from typing import Dict
-from dataclasses import asdict
 import configparser
 import json
 import logging
 import os
+from dataclasses import asdict
+from typing import Dict
 
 import tornado.ioloop
 import tornado.options
 import tornado.web
-from tornado.options import define, options
-
 from lbcs import config
+from tornado.options import define, options
 
 DEFAULT_CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "example_config.ini"
@@ -21,8 +20,18 @@ logger = logging.getLogger(__file__)
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, leds: Dict[int, int]):
+    def initialize(self, leds: Dict[int, int], rows: int, columns: int, **ignored):
         self.leds = leds
+        self.rows = rows
+        self.columns = columns
+
+    def render(self):
+        for i in range(self.rows):
+            logger.info(
+                " ".join(
+                    [str(self.leds[i * self.rows + j]) for j in range(self.columns)]
+                )
+            )
 
 
 class AllStateHandler(BaseHandler):
@@ -45,24 +54,22 @@ class StateHandler(BaseHandler):
 
         self.leds[int(lednumber)] = state
         self.write(f"Turned led {lednumber} {new_state}")
+        self.render()
 
 
 class DimensionsHandler(BaseHandler):
-    def initialize(self, rows, columns, **kwargs):
-        self.rows = rows
-        self.columns = columns
-
     def get(self):
         self.write(json.dumps({"rows": self.rows, "columns": self.columns}))
 
 
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
+        ctx = dict(leds=leds, **asdict(cfg))
         handlers = [
-            (r"/dimensions/", DimensionsHandler, asdict(cfg)),
-            (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, {"leds": leds}),
-            (r"/state/([0-9]+)/", StateHandler, {"leds": leds}),
-            (r"/state/", AllStateHandler, {"leds": leds}),
+            (r"/dimensions/", DimensionsHandler, ctx),
+            (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, ctx),
+            (r"/state/([0-9]+)/", StateHandler, ctx),
+            (r"/state/", AllStateHandler, ctx),
         ]
         super().__init__(handlers, debug=cfg.debug)
 
