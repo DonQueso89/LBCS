@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "ledserver"
+name = "lbcs"
 version = "0.1.0"
 description = "A small async server for processing led commands to AdaFruit Neopixels"
 authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>"]
@@ -14,6 +14,16 @@ mypy = "^0.770"
 black = "^19.10b0"
 flake8 = "^3.7.9"
 
+[tool.poetry.scripts]
+lbcs-server = 'lbcs.server:main'
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap= 0
+use_parentheses = true
+sline_length = 88
