@@ -1,0 +1,11 @@
+Metadata-Version: 1.2
+Name: lbcs
+Version: 0.1.0
+Summary: A small async server for processing led commands to AdaFruit Neopixels
+Home-page: UNKNOWN
+Author: Kees van Ekeren
+Author-email: kg.v.ekeren@gmail.com
+License: UNKNOWN
+Description: UNKNOWN
+Platform: UNKNOWN
+Requires-Python: >=3.8,<4.0
