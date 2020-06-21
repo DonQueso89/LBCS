@@ -9,8 +9,14 @@ class LBCSApi {
       {method: 'POST'}
     )
   }
+
+  getDimensions(): Promise {
+    return fetch(
+      new URL(`dimensions/`, this.baseUrl),
+    )
+  }
 }
 
 
-const lbcsApi = new LBCSApi("http://localhost:8888/")
+const lbcsApi = new LBCSApi("http://192.168.2.18:8888/")
 export default lbcsApi;

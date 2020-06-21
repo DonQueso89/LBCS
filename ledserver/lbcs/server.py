@@ -44,7 +44,7 @@ class StateHandler(BaseHandler):
         state = "off"
         if self.leds[int(lednumber)]:
             state = "on"
-        self.write(f"led {lednumber} is switched {state}")
+        self.write(f"")
 
     def post(self, lednumber, state):
         state = int(state)
@@ -53,7 +53,7 @@ class StateHandler(BaseHandler):
             new_state = "on"
 
         self.leds[int(lednumber)] = state
-        self.write(f"Turned led {lednumber} {new_state}")
+        self.write(f"")
         self.render()
 
 
