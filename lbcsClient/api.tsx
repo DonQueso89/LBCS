@@ -15,6 +15,13 @@ class LBCSApi {
       new URL(`dimensions/`, this.baseUrl),
     )
   }
+  
+  state(): Promise {
+    return fetch(
+      new URL(`state/`, this.baseUrl),
+      {mode: "cors"}
+    )
+  }
 }
 
 

@@ -24,19 +24,24 @@ class BaseHandler(tornado.web.RequestHandler):
         self.leds = leds
         self.rows = rows
         self.columns = columns
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Content-Type", "application/json")
 
     def render(self):
         for i in range(self.rows):
             logger.info(
                 " ".join(
-                    [str(self.leds[i * self.rows + j]) for j in range(self.columns)]
+                    [str(self.leds[i * self.columns + j]) for j in range(self.columns)]
                 )
             )
 
 
 class AllStateHandler(BaseHandler):
     def get(self):
-        self.write(json.dumps(self.leds))
+        state = dict(self.leds)
+        state["rows"] = self.rows
+        state["columns"] = self.columns
+        self.write(json.dumps(state))
 
 
 class StateHandler(BaseHandler):
@@ -59,6 +64,7 @@ class StateHandler(BaseHandler):
 
 class DimensionsHandler(BaseHandler):
     def get(self):
+        self.set_header("Content-Type", "application/json")
         self.write(json.dumps({"rows": self.rows, "columns": self.columns}))
 
 
