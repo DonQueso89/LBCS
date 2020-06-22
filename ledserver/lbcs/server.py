@@ -8,8 +8,9 @@ from typing import Dict
 import tornado.ioloop
 import tornado.options
 import tornado.web
-from lbcs import config
 from tornado.options import define, options
+
+from lbcs import config
 
 DEFAULT_CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "example_config.ini"
@@ -31,7 +32,10 @@ class BaseHandler(tornado.web.RequestHandler):
         for i in range(self.rows):
             logger.info(
                 " ".join(
-                    [str(self.leds[i * self.columns + j]) for j in range(self.columns)]
+                    [
+                        "*" if self.leds[i * self.columns + j] else " "
+                        for j in range(self.columns)
+                    ]
                 )
             )
 
@@ -68,10 +72,16 @@ class DimensionsHandler(BaseHandler):
         self.write(json.dumps({"rows": self.rows, "columns": self.columns}))
 
 
+class AliveHandler(BaseHandler):
+    def get(self):
+        self.write("")
+
+
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
         ctx = dict(leds=leds, **asdict(cfg))
         handlers = [
+            (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
             (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, ctx),
             (r"/state/([0-9]+)/", StateHandler, ctx),

@@ -3,6 +3,14 @@ class LBCSApi {
     this.baseUrl = new URL(baseUrl)
   }
 
+  async canConnect() {
+    const response = await fetch(
+      new URL(`alive/`, this.baseUrl),
+    )
+    return response.ok
+  }
+
+
   setLed(ledNumber: number, on: boolean): Promise {
     return fetch(
       new URL(`state/${ledNumber}/${on ? 1 : 0}/`, this.baseUrl),
@@ -22,8 +30,8 @@ class LBCSApi {
       {mode: "cors"}
     )
   }
+
 }
 
 
-const lbcsApi = new LBCSApi("http://192.168.2.18:8888/")
-export default lbcsApi;
+export default LBCSApi;

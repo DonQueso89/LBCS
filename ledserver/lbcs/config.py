@@ -1,5 +1,5 @@
-from dataclasses import dataclass, fields, asdict
 from configparser import ConfigParser
+from dataclasses import asdict, dataclass, fields
 
 
 @dataclass

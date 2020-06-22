@@ -1,12 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Text, View, StyleSheet, TouchableHighlight } from 'react-native';
 import Constants from 'expo-constants';
-import lbcsApi from './api';
+import LBCSApi from './api';
 import FlashMessage, { showMessage } from 'react-native-flash-message';
 import * as R from 'ramda';
 
 // or any pure javascript modules available in npm
-import { Avatar, Appbar, Menu } from 'react-native-paper';
+import { Avatar, Appbar, Menu, TextInput } from 'react-native-paper';
 
 function Cell({ ledNumber, selected, handleToggle }) {
   const cellStyle ={
@@ -37,6 +37,9 @@ export default function App() {
   const [gridState, setGridState] = useState({})
   const [rows, setRows] = useState(0)
   const [cols, setCols] = useState(0)
+  const [serverUrl, setServerUrl] = useState("http://192.168.2.18:8888/")
+  const [lbcsApi, setApi] = useState(new LBCSApi("http://192.168.2.18:8888/"))
+  const [serverUrlText, setServerUrlText] = useState("http://192.168.2.18:8888/")
 
   const syncWithServer = async () => {
     /* Load grid state and dimensions */
@@ -69,7 +72,24 @@ export default function App() {
       return newState
     })
   }
-  
+
+  const handleServerUrl = useCallback((newServerUrl) => {
+    setServerUrlText(newServerUrl)
+    try {
+      new URL(newServerUrl)
+    } catch(e) {
+      return;
+    }
+
+    if (newServerUrl === serverUrl) {
+      return;
+    }
+
+    setApi(new LBCSApi(newServerUrl))
+    setServerUrl(newServerUrl)
+
+  }, [setServerUrl, setApi, setServerUrlText, serverUrl])
+
   return (
     <View style={styles.container}>
       <Appbar.Header dark={true}>
@@ -77,6 +97,11 @@ export default function App() {
         <Appbar.Content title="Little Bull Climbing System"/> 
         <Appbar.Action icon="sync" onPress={syncWithServer} />
         <Appbar.Action icon="dots-vertical" onPress={() => null} size={32} />
+        <TextInput
+          label='Server'
+          value={serverUrlText}
+          onChangeText={handleServerUrl}
+        />
       </Appbar.Header>
       <Grid rows={rows} cols={cols} gridState={gridState} handleToggle={handleToggle} />
       <FlashMessage position={"top"} />
