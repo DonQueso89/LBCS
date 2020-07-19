@@ -1,4 +1,3 @@
-import configparser
 import json
 import logging
 import os
@@ -80,13 +79,13 @@ class AliveHandler(BaseHandler):
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
         ctx = dict(leds=leds, **asdict(cfg))
-        handlers = [
+        handlers = (
             (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
             (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, ctx),
             (r"/state/([0-9]+)/", StateHandler, ctx),
             (r"/state/", AllStateHandler, ctx),
-        ]
+        )
         super().__init__(handlers, debug=cfg.debug)
 
 
