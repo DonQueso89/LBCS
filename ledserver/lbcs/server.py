@@ -27,14 +27,6 @@ define("config_file", help="absolute path to config file", default=DEFAULT_CONFI
 logger = logging.getLogger(__file__)
 
 
-def translate_lednumber(columns, lednumber):
-    """Translate a contiguous sequence to a zig zag sequence"""
-    row = lednumber // columns
-    if row % 2 == 0:
-        return lednumber
-    return (row + 1) * columns - (lednumber % columns) - 1
-
-
 class BaseHandler(tornado.web.RequestHandler):
     def initialize(
         self,
@@ -43,6 +35,7 @@ class BaseHandler(tornado.web.RequestHandler):
         columns: int,
         debug: bool,
         pixels,
+        reverse_mapping: Dict[int, int],
         **ignored,
     ):
         self.pixels = pixels
@@ -50,6 +43,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.leds = leds
         self.rows = rows
         self.columns = columns
+        self.reverse_mapping = reverse_mapping
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Content-Type", "application/json")
 
@@ -63,6 +57,14 @@ class BaseHandler(tornado.web.RequestHandler):
                     ]
                 )
             )
+
+    def translate_lednumber(self, columns, lednumber):
+        """Translate a contiguous sequence from top left to bottom from 0 to n
+        to a reversed zig zag sequence"""
+        row = lednumber // columns
+        if row % 2 == 0:
+            return self.reverse_mapping[lednumber]
+        return self.reverse_mapping[(row + 1) * columns - (lednumber % columns) - 1]
 
 
 class AllStateHandler(BaseHandler):
@@ -87,7 +89,7 @@ class StateHandler(BaseHandler):
         self.leds[lednumber] = state
 
         try:
-            self.pixels[translate_lednumber(self.columns, lednumber)] = {
+            self.pixels[self.translate_lednumber(self.columns, lednumber)] = {
                 1: GREEN,
                 0: OFF,
             }[state]
@@ -117,14 +119,14 @@ class AliveHandler(BaseHandler):
 
 
 class LBCSServer(tornado.web.Application):
-    def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
+    def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int], reverse_mapping: Dict[int, int]):
         import neopixel
         import board
 
         pixels = neopixel.NeoPixel(
             getattr(board, cfg.pixel_pin), len(leds), brightness=1, auto_write=False
         )
-        ctx = dict(leds=leds, pixels=pixels, **asdict(cfg))
+        ctx = dict(leds=leds, pixels=pixels, reverse_mapping=reverse_mapping, **asdict(cfg))
 
         handlers = (
             (r"/alive/", AliveHandler, ctx),
@@ -140,8 +142,12 @@ def main():
     tornado.options.parse_command_line()
     cfg = config.get(options.config_file)
     leds = {i: 0 for i in range(cfg.rows * cfg.columns)}
+    reverse_mapping = {}
+    for row in range(cfg.rows):
+        for i, col in enumerate(reversed(range(cfg.columns))):
+            reverse_mapping[row * cfg.columns + i] = row * cfg.columns + col
 
-    app = LBCSServer(cfg, leds)
+    app = LBCSServer(cfg, leds, reverse_mapping)
     app.listen(cfg.port)
 
     logger.info(f"Parsed server config\n{cfg.pretty()}\n")
