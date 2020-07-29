@@ -30,13 +30,8 @@ logger = logging.getLogger(__file__)
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, leds: Dict[int, int], rows: int, columns: int, debug: bool, pixel_pin: str, **ignored):
-        self.pixels = neopixel.NeoPixel(
-            getattr(board, pixel_pin),
-            len(leds),
-            brightness=0.1,
-            auto_write=False
-        )
+    def initialize(self, leds: Dict[int, int], rows: int, columns: int, debug: bool, pixels: neopixel.NeoPixel, **ignored):
+        self.pixels = pixels
         self.debug = debug
         self.leds = leds
         self.rows = rows
@@ -109,7 +104,14 @@ class AliveHandler(BaseHandler):
 
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
-        ctx = dict(leds=leds, **asdict(cfg))
+        pixels = neopixel.NeoPixel(
+            getattr(board, cfg.pixel_pin),
+            len(leds),
+            brightness=1,
+            auto_write=False
+        )
+        ctx = dict(leds=leds, pixels=pixels, **asdict(cfg))
+
         handlers = (
             (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
