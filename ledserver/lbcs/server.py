@@ -15,7 +15,7 @@ from lbcs import config
 
 RED = (255, 0, 0)
 YELLOW = (255, 150, 0)
-GREEN = (0, 255, 0)
+GREEN = (255, 0, 0)
 CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
@@ -84,7 +84,7 @@ class StateHandler(BaseHandler):
             }[state]
             self.pixels.show()
         except Exception as e:
-            state_verbose = {1: "on", 0: "off"}
+            state_verbose = {1: "on", 0: "off"}[state]
             logger.error(
                 f"An error ocurred while setting {lednumber} to {state_verbose}:\n {e}"
             )
