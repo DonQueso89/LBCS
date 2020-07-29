@@ -1,6 +1,4 @@
 import json
-import board
-import neopixel
 import logging
 import os
 from dataclasses import asdict
@@ -29,8 +27,24 @@ define("config_file", help="absolute path to config file", default=DEFAULT_CONFI
 logger = logging.getLogger(__file__)
 
 
+def translate_lednumber(columns, lednumber):
+    """Translate a contiguous sequence to a zig zag sequence"""
+    row = lednumber // columns
+    if row % 2 == 0:
+        return lednumber
+    return (row + 1) * columns - (lednumber % columns) - 1
+
+
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, leds: Dict[int, int], rows: int, columns: int, debug: bool, pixels: neopixel.NeoPixel, **ignored):
+    def initialize(
+        self,
+        leds: Dict[int, int],
+        rows: int,
+        columns: int,
+        debug: bool,
+        pixels,
+        **ignored,
+    ):
         self.pixels = pixels
         self.debug = debug
         self.leds = leds
@@ -73,9 +87,9 @@ class StateHandler(BaseHandler):
         self.leds[lednumber] = state
 
         try:
-            self.pixels[lednumber] = {
+            self.pixels[translate_lednumber(self.columns, lednumber)] = {
                 1: GREEN,
-                0: OFF
+                0: OFF,
             }[state]
             self.pixels.show()
         except Exception as e:
@@ -104,11 +118,11 @@ class AliveHandler(BaseHandler):
 
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int]):
+        import neopixel
+        import board
+
         pixels = neopixel.NeoPixel(
-            getattr(board, cfg.pixel_pin),
-            len(leds),
-            brightness=1,
-            auto_write=False
+            getattr(board, cfg.pixel_pin), len(leds), brightness=1, auto_write=False
         )
         ctx = dict(leds=leds, pixels=pixels, **asdict(cfg))
 
