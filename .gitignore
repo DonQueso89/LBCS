@@ -26,5 +26,5 @@ yarn-error.log*
 
 *.egg-info
 
-*/.mypy_cache/*
+.mypy_cache/*
 */dist/**
