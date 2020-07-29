@@ -8,6 +8,7 @@ class LBCSConfig:
     rows: int
     columns: int
     debug: bool
+    pixel_pin: str
 
     def normalized(self):
         return self.__class__(
