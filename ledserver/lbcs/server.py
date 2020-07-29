@@ -1,4 +1,6 @@
 import json
+import board
+import neopixel
 import logging
 import os
 from dataclasses import asdict
@@ -11,6 +13,14 @@ from tornado.options import define, options
 
 from lbcs import config
 
+RED = (255, 0, 0)
+YELLOW = (255, 150, 0)
+GREEN = (0, 255, 0)
+CYAN = (0, 255, 255)
+BLUE = (0, 0, 255)
+PURPLE = (180, 0, 255)
+OFF = (0, 0, 0)
+
 DEFAULT_CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "example_config.ini"
 )
@@ -20,7 +30,14 @@ logger = logging.getLogger(__file__)
 
 
 class BaseHandler(tornado.web.RequestHandler):
-    def initialize(self, leds: Dict[int, int], rows: int, columns: int, **ignored):
+    def initialize(self, leds: Dict[int, int], rows: int, columns: int, debug: bool, pixel_pin: str, **ignored):
+        self.pixels = neopixel.NeoPixel(
+            getattr(board, pixel_pin),
+            len(leds),
+            brightness=0.1,
+            auto_write=False
+        )
+        self.debug = debug
         self.leds = leds
         self.rows = rows
         self.columns = columns
@@ -52,17 +69,31 @@ class StateHandler(BaseHandler):
         state = "off"
         if self.leds[int(lednumber)]:
             state = "on"
-        self.write(f"")
+        self.write(f"{state}")
 
     def post(self, lednumber, state):
         state = int(state)
-        new_state = "off"
-        if state:
-            new_state = "on"
 
-        self.leds[int(lednumber)] = state
-        self.write(f"")
-        self.render()
+        lednumber = int(lednumber)
+        self.leds[lednumber] = state
+
+        try:
+            self.pixels[lednumber] = {
+                1: GREEN,
+                0: OFF
+            }[state]
+            self.pixels.show()
+        except Exception as e:
+            state_verbose = {1: "on", 0: "off"}
+            logger.error(
+                f"An error ocurred while setting {lednumber} to {state_verbose}:\n {e}"
+            )
+            self.leds[lednumber] = int(not state)
+
+        self.write("")
+
+        if self.debug:
+            self.render()
 
 
 class DimensionsHandler(BaseHandler):
