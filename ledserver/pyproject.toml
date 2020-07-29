@@ -5,7 +5,7 @@ description = "A small async server for processing led commands to AdaFruit Neop
 authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.7"
 tornado = "^6.0.4"
 
 [tool.poetry.dev-dependencies]
