@@ -1,4 +1,5 @@
 import json
+
 import logging
 import os
 from dataclasses import asdict
@@ -8,6 +9,7 @@ import tornado.ioloop
 import tornado.options
 import tornado.web
 from tornado.options import define, options
+
 
 from lbcs import config
 
@@ -25,6 +27,15 @@ DEFAULT_CONFIG = os.path.join(
 define("config_file", help="absolute path to config file", default=DEFAULT_CONFIG)
 
 logger = logging.getLogger(__file__)
+
+try:
+    import neopixel
+    import board
+except NotImplementedError:
+    logger.debug("No Neopixel devices found, mocking CircuitPython objects")
+    from unittest import mock
+    board = mock.MagicMock()
+    neopixel = mock.MagicMock()
 
 
 class BaseHandler(tornado.web.RequestHandler):
@@ -47,7 +58,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Content-Type", "application/json")
 
-    def render(self):
+    def render_grid(self):
         for i in range(self.rows):
             logger.info(
                 " ".join(
@@ -65,6 +76,14 @@ class BaseHandler(tornado.web.RequestHandler):
         if row % 2 == 0:
             return self.reverse_mapping[lednumber]
         return self.reverse_mapping[(row + 1) * columns - (lednumber % columns) - 1]
+
+
+class IndexHandler(tornado.web.RequestHandler):
+    def initialize(self, cfg: config.LBCSConfig):
+        self.cfg = cfg
+
+    def get(self):
+        self.render("index.html", title="LBCS", header="Little Bull Climbing Server", cfg=self.cfg)
 
 
 class AllStateHandler(BaseHandler):
@@ -104,7 +123,7 @@ class StateHandler(BaseHandler):
         self.write("")
 
         if self.debug:
-            self.render()
+            self.render_grid()
 
 
 class DimensionsHandler(BaseHandler):
@@ -120,9 +139,6 @@ class AliveHandler(BaseHandler):
 
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int], reverse_mapping: Dict[int, int]):
-        import neopixel
-        import board
-
         pixels = neopixel.NeoPixel(
             getattr(board, cfg.pixel_pin), len(leds), brightness=1, auto_write=False
         )
@@ -134,8 +150,9 @@ class LBCSServer(tornado.web.Application):
             (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, ctx),
             (r"/state/([0-9]+)/", StateHandler, ctx),
             (r"/state/", AllStateHandler, ctx),
+            (r"/", IndexHandler, {"cfg": cfg}),
         )
-        super().__init__(handlers, debug=cfg.debug)
+        super().__init__(handlers, debug=cfg.debug,  static_path=".")
 
 
 def main():

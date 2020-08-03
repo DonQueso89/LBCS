@@ -1,0 +1,11 @@
+<html>
+   <head>
+      <title>{{ title }}</title>
+   </head>
+   <body style="font-family: 'Courier New', Courier, monospace; text-align: center; background-color: rgb(159, 184, 231);">
+       <h1>{{ header }}</h1>
+       <img src={{ static_url("splash.png") }} width=500 height=500></img>
+       <h4>Parsed Configuration</h4>
+       <pre>{{ cfg.pretty() }}</pre>
+   </body>
+ </html>
