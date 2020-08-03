@@ -8,7 +8,10 @@ from typing import Dict
 import tornado.ioloop
 import tornado.options
 import tornado.web
+import tornado.websocket
+
 from tornado.options import define, options
+from tornado.queues import Queue
 
 
 from lbcs import config
@@ -38,6 +41,22 @@ except NotImplementedError:
     neopixel = mock.MagicMock()
 
 
+class DebugGridWebSocketHandler(tornado.websocket.WebSocketHandler):
+    """Websocket handler that syncs up the debug grid shown on the index page"""
+    def initialize(self, q):
+        self.q = q
+
+    def open(self):
+        logger.info("WebSocket opened")
+
+    async def on_message(self, message):
+        logger.info(f"Received {message} from WebSocket client")
+        self.write_message(json.dumps(await self.q.get()))
+
+    def on_close(self):
+        logger.info("WebSocket closed")
+
+
 class BaseHandler(tornado.web.RequestHandler):
     def initialize(
         self,
@@ -47,6 +66,7 @@ class BaseHandler(tornado.web.RequestHandler):
         debug: bool,
         pixels,
         reverse_mapping: Dict[int, int],
+        q: Queue,
         **ignored,
     ):
         self.pixels = pixels
@@ -55,6 +75,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.rows = rows
         self.columns = columns
         self.reverse_mapping = reverse_mapping
+        self.q = q
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Content-Type", "application/json")
 
@@ -63,7 +84,7 @@ class BaseHandler(tornado.web.RequestHandler):
             logger.info(
                 " ".join(
                     [
-                        "*" if self.leds[i * self.columns + j] else " "
+                        "*" if self.leds[i * self.columns + j] != (0, 0, 0) else " "
                         for j in range(self.columns)
                     ]
                 )
@@ -79,11 +100,12 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class IndexHandler(tornado.web.RequestHandler):
-    def initialize(self, cfg: config.LBCSConfig):
+    def initialize(self, cfg: config.LBCSConfig, leds: Dict[int, int], **ignored):
         self.cfg = cfg
+        self.leds = leds
 
     def get(self):
-        self.render("index.html", title="LBCS", header="Little Bull Climbing Server", cfg=self.cfg)
+        self.render("index.html", title="LBCS", header="Little Bull Climbing Server", cfg=self.cfg, state=self.leds)
 
 
 class AllStateHandler(BaseHandler):
@@ -101,24 +123,24 @@ class StateHandler(BaseHandler):
             state = "on"
         self.write(f"{state}")
 
-    def post(self, lednumber, state):
-        state = int(state)
-
+    def post(self, lednumber, red, green, blue):
+        red,  green, blue = int(red), int(green), int(blue)
         lednumber = int(lednumber)
-        self.leds[lednumber] = state
+        triple = (red,  green, blue)
+
+        _prev_state = self.leds[lednumber]
+        self.leds[lednumber] = triple
 
         try:
-            self.pixels[self.translate_lednumber(self.columns, lednumber)] = {
-                1: GREEN,
-                0: OFF,
-            }[state]
+            self.pixels[self.translate_lednumber(self.columns, lednumber)] = triple
             self.pixels.show()
+            self.q.put({"lednumber": lednumber, "red": red, "green": green, "blue": blue})
         except Exception as e:
-            state_verbose = {1: "on", 0: "off"}[state]
+            state_verbose = {(0, 0, 0): "off"}.get(triple, "on")
             logger.error(
                 f"An error ocurred while setting {lednumber} to {state_verbose}:\n {e}"
             )
-            self.leds[lednumber] = int(not state)
+            self.leds[lednumber] = _prev_state
 
         self.write("")
 
@@ -142,15 +164,18 @@ class LBCSServer(tornado.web.Application):
         pixels = neopixel.NeoPixel(
             getattr(board, cfg.pixel_pin), len(leds), brightness=1, auto_write=False
         )
-        ctx = dict(leds=leds, pixels=pixels, reverse_mapping=reverse_mapping, **asdict(cfg))
+        q: Queue = Queue()
+        ctx = dict(q=q, cfg=cfg, leds=leds, pixels=pixels, reverse_mapping=reverse_mapping, **asdict(cfg))
+
 
         handlers = (
+            (r"/websocket/", DebugGridWebSocketHandler, {"q": q}),
             (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
-            (r"/state/([0-9]+)/([0-1]{1})/", StateHandler, ctx),
+            (r"/state/([0-9]+)/([0-9]{3})/([0-9]{3})/([0-9]{3})/", StateHandler, ctx),
             (r"/state/([0-9]+)/", StateHandler, ctx),
             (r"/state/", AllStateHandler, ctx),
-            (r"/", IndexHandler, {"cfg": cfg}),
+            (r"/", IndexHandler, ctx),
         )
         super().__init__(handlers, debug=cfg.debug,  static_path=".")
 
@@ -158,7 +183,7 @@ class LBCSServer(tornado.web.Application):
 def main():
     tornado.options.parse_command_line()
     cfg = config.get(options.config_file)
-    leds = {i: 0 for i in range(cfg.rows * cfg.columns)}
+    leds = {i: (0, 0, 0) for i in range(cfg.rows * cfg.columns)}
     reverse_mapping = {}
     for row in range(cfg.rows):
         for i, col in enumerate(reversed(range(cfg.columns))):
