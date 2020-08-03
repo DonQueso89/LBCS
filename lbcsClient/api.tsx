@@ -8,8 +8,8 @@ class LBCSApi {
     return response.ok;
   }
 
-  setLed(ledNumber: number, on: boolean): Promise {
-    return fetch(new URL(`state/${ledNumber}/${on ? 1 : 0}/`, this.baseUrl), {
+  setLed(ledNumber: number, red: Number, green: Number, blue: Number): Promise {
+    return fetch(new URL(`state/${ledNumber}/${red.toString().padStart(3, "0")}/${green.toString().padStart(3, "0")}/${blue.toString().padStart(3, "0")}/`, this.baseUrl), {
       method: "POST"
     });
   }

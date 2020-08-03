@@ -8,21 +8,25 @@ import * as R from "ramda";
 // or any pure javascript modules available in npm
 import { Avatar, Appbar, Menu, TextInput } from "react-native-paper";
 
-function Cell({ ledNumber, selected, handleToggle }) {
+function Cell({ ledNumber, rgbState, handleToggle }) {
+  const [red, green, blue] = rgbState.map(Number)
+  const isOn = [red, green, blue].reduce((a,b) => a+b)
   const cellStyle = {
     flex: 1,
-    backgroundColor: selected ? "blue" : "beige",
+    backgroundColor: isOn ? `rgb(${red}, ${green}, ${blue})` : "beige",
     borderColor: "black",
     borderWidth: 1,
     borderRadius: 5
   };
+  const rndColor = () => Math.floor(Math.random() * 255)
+  const colorArgs = isOn ? [0, 0, 0] : [rndColor(), rndColor(), rndColor()]
 
   return (
     <TouchableHighlight
       style={cellStyle}
-      onPress={() => handleToggle(ledNumber)}
+      onPress={() => handleToggle(ledNumber, ...colorArgs)}
     >
-      <Text>{selected ? "ON" : "OFF"}</Text>
+      <Text>{isOn ? "ON" : "OFF"}</Text>
     </TouchableHighlight>
   );
 }
@@ -35,7 +39,7 @@ function Row({ cols, startIndex, gridState, handleToggle }) {
         columns={cols}
         ledNumber={startIndex + i}
         key={i}
-        selected={gridState[startIndex + i]}
+        rgbState={gridState[startIndex + i]}
         handleToggle={handleToggle}
       />
     ));
@@ -63,10 +67,10 @@ export default function App() {
   const [gridState, setGridState] = useState({});
   const [rows, setRows] = useState(0);
   const [cols, setCols] = useState(0);
-  const [serverUrl, setServerUrl] = useState("http://192.168.2.18:8888/");
-  const [lbcsApi, setApi] = useState(new LBCSApi("http://192.168.2.18:8888/"));
+  const [serverUrl, setServerUrl] = useState("http://192.168.178.23:8888/");
+  const [lbcsApi, setApi] = useState(new LBCSApi("http://192.168.178.23:8888/"));
   const [serverUrlText, setServerUrlText] = useState(
-    "http://192.168.2.18:8888/"
+    "http://192.168.178.23:8888/"
   );
 
   const syncWithServer = async () => {
@@ -89,12 +93,12 @@ export default function App() {
     syncWithServer();
   }, [lbcsApi]);
 
-  const handleToggle = (ledNumber: number) => {
+  const handleToggle = (ledNumber: number, red: number, green: number, blue: number) => {
     setGridState(prevState => {
       const newState = { ...prevState };
       const value = newState[ledNumber];
 
-      lbcsApi.setLed(ledNumber, !value).then(response => {
+      const newColor = lbcsApi.setLed(ledNumber, red, green, blue).then(response => {
         if (!response.ok) {
           showMessage({
             message: `Something went wrong while toggling ${ledNumber}`,
@@ -102,7 +106,7 @@ export default function App() {
           });
         }
       });
-      newState[ledNumber] = !value;
+      newState[ledNumber] = [red, green, blue];
       return newState;
     });
   };
