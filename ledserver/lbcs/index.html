@@ -17,13 +17,14 @@
        <img src={{ static_url("splash.png") }} width=500 height=500></img>
        <h4>Parsed Configuration</h4>
        <pre>{{ cfg.pretty() }}</pre>
-
+       <button class="reset-button" id='reset-button'>Reset</button>
+       <button class="fill-button" id='fill-button'>Fill</button>
        <h4>Server grid state</h4>
       <div class="grid-container">
          {% for i in range(cfg.rows * cfg.columns) %}
-            <div class="grid-item" id="grid-item-{{ i }}" style="background-color: rgb{{ state[i] }};">{{ state[i] }}</div>
+            <div class="grid-item" id="grid-item-{{ i }}" style="background-color: rgb{{ state[i] }};">{{ computed_indices[i] }}</div>
          {% end %}
       </div>
-      <script src={{ static_url("gridWebSocket.js") }}></script>
+      <script src={{ static_url("gridWebSocket.js") }} allStateUrl={{ reverse_url("all_leds") }}></script>
    </body>
  </html>

@@ -9,6 +9,8 @@ class LBCSConfig:
     columns: int
     debug: bool
     pixel_pin: str
+    map_algo: str
+    skip: int
 
     def normalized(self):
         return self.__class__(
