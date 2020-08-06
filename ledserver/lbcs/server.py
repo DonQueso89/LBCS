@@ -64,7 +64,7 @@ def top_bottom_zig_zag(columns, rows, mult=1):
         for x in range(columns):
             row, column = x, y  # swap row and column
             column = columns - column - 1 # count column backwards
-            rotated_zigzag[row * columns + column] = zigzag[y * columns + x]
+            rotated_zigzag[row * columns + column] = zigzag[y * columns + x] * 2
 
     return rotated_zigzag
 

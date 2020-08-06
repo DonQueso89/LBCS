@@ -22,7 +22,7 @@
        <h4>Server grid state</h4>
       <div class="grid-container">
          {% for i in range(cfg.rows * cfg.columns) %}
-            <div class="grid-item" id="grid-item-{{ i }}" style="background-color: rgb{{ state[i] }};">{{ computed_indices[i] }}</div>
+            <div class="grid-item" id="grid-item-{{ i }}" {% if state[i] != (0, 0, 0) %}style="background-color: rgb{{ state[i] }};"{% end %}}]>{{ computed_indices[i] }}</div>
          {% end %}
       </div>
       <script src={{ static_url("gridWebSocket.js") }} allStateUrl={{ reverse_url("all_leds") }}></script>

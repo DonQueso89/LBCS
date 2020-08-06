@@ -10,7 +10,11 @@ document.addEventListener("DOMContentLoaded", function(_) {
         console.log("Raw data from server websocket: ", e.data);
 
         for (let {lednumber, red, green, blue } of JSON.parse(e.data)) {
-            document.getElementById(`grid-item-${lednumber}`).style.backgroundColor = `rgb(${red}, ${green}, ${blue})`
+            if ([red, green,blue].map(Number).reduce((a,b) => a + b) !== 0) {
+                document.getElementById(`grid-item-${lednumber}`).style.backgroundColor = `rgb(${red}, ${green}, ${blue})`
+            } else {
+                document.getElementById(`grid-item-${lednumber}`).style.backgroundColor = null
+            }
         }
         ws.send("Next please");
     };
