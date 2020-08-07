@@ -1,77 +1,50 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Text, View, StyleSheet, TouchableHighlight } from "react-native";
+import {Asset} from "expo-asset"
+import { useWindowDimensions, View, StyleSheet } from "react-native";
 import Constants from "expo-constants";
 import LBCSApi from "./api";
 import FlashMessage, { showMessage } from "react-native-flash-message";
 import * as R from "ramda";
 
-// or any pure javascript modules available in npm
 import { Avatar, Appbar, Menu, TextInput } from "react-native-paper";
+import Grid from "./components/Grid"
+import Canvas, { Image } from "react-native-canvas"
 
-function Cell({ ledNumber, rgbState, handleToggle }) {
-  const [red, green, blue] = rgbState.map(Number)
-  const isOn = [red, green, blue].reduce((a,b) => a+b)
-  const cellStyle = {
-    flex: 1,
-    backgroundColor: isOn ? `rgb(${red}, ${green}, ${blue})` : "beige",
-    borderColor: "black",
-    borderWidth: 1,
-    borderRadius: 5
-  };
-  const rndColor = () => Math.floor(Math.random() * 255)
-  const colorArgs = isOn ? [0, 0, 0] : [rndColor(), rndColor(), rndColor()]
 
-  return (
-    <TouchableHighlight
-      style={cellStyle}
-      onPress={() => handleToggle(ledNumber, ...colorArgs)}
-    >
-      <Text>{isOn ? "ON" : "OFF"}</Text>
-    </TouchableHighlight>
-  );
-}
-
-function Row({ cols, startIndex, gridState, handleToggle }) {
-  const cells = Array(cols)
-    .fill(null)
-    .map((_, i) => (
-      <Cell
-        columns={cols}
-        ledNumber={startIndex + i}
-        key={i}
-        rgbState={gridState[startIndex + i]}
-        handleToggle={handleToggle}
-      />
-    ));
-
-  return <View style={styles.row}>{cells}</View>;
-}
-
-function Grid({ rows, cols, handleToggle, gridState }) {
-  const rowComponents = Array(rows)
-    .fill(null)
-    .map((_, i) => (
-      <Row
-        cols={cols}
-        startIndex={cols * i}
-        key={i}
-        gridState={gridState}
-        handleToggle={handleToggle}
-      />
-    ));
-  return <View style={styles.container}>{rowComponents}</View>;
-}
+const HOST = ""
 
 export default function App() {
   const [menuVisible, setMenuVisible] = useState(false);
   const [gridState, setGridState] = useState({});
   const [rows, setRows] = useState(0);
   const [cols, setCols] = useState(0);
-  const [serverUrl, setServerUrl] = useState("http://192.168.178.23:8888/");
-  const [lbcsApi, setApi] = useState(new LBCSApi("http://192.168.178.23:8888/"));
+  const [serverUrl, setServerUrl] = useState(`http://${HOST}:8888/`);
+  const [lbcsApi, setApi] = useState(new LBCSApi(`http://${HOST}:8888/`));
   const [serverUrlText, setServerUrlText] = useState(
-    "http://192.168.178.23:8888/"
+    `http://${HOST}:8888/`
   );
+  const windowDimensions = useWindowDimensions();
+
+  const initCanvas = (canvas) => {
+    if (rows && cols && canvas) {
+      canvas.width = windowDimensions.width
+      canvas.height = windowDimensions.width
+      const img = new Image(canvas, windowDimensions.width, windowDimensions.width)
+      img.src = Asset.fromModule(require('./assets/climbwall.jpg')).uri
+      const [cellWidth, cellHeight] = [canvas.width / cols, canvas.height / rows]
+      console.log(cellHeight, cellWidth)
+      const ctx = canvas.getContext('2d');
+      
+      img.addEventListener("load", () => {
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        Array(rows).fill(null).map((_, y) => Array(cols).fill(null).map((_, x) => {
+          ctx.strokeRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+        }))
+      })
+
+    }
+  }
+
 
   const syncWithServer = async () => {
     /* Load grid state and dimensions */
@@ -148,12 +121,15 @@ export default function App() {
           onChangeText={handleServerUrl}
         />
       </Appbar.Header>
+      {/*
       <Grid
         rows={rows}
         cols={cols}
         gridState={gridState}
         handleToggle={handleToggle}
       />
+      */}
+      <Canvas ref={initCanvas} />
       <FlashMessage position={"top"} />
     </View>
   );

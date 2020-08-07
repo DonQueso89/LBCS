@@ -1,4 +1,5 @@
 import json
+import socket
 
 import logging
 import os
@@ -93,6 +94,8 @@ class DebugGridWebSocketHandler(tornado.websocket.WebSocketHandler):
     """Websocket handler that syncs up the debug grid shown on the index page"""
     def initialize(self, q):
         self.q = q
+        self.set_header("Access-Control-Allow-Origin", "*")
+        self.set_header("Content-Type", "application/json")
 
     def open(self):
         logger.info("WebSocket opened")
@@ -149,7 +152,16 @@ class IndexHandler(tornado.web.RequestHandler):
         self.led_index_mapping = led_index_mapping
 
     def get(self):
-        self.render("index.html", title="LBCS", header="Little Bull Climbing Server", cfg=self.cfg, state=self.leds, computed_indices=self.led_index_mapping)
+        websocket_url = f"ws://{socket.gethostbyname(socket.gethostname())}:{self.cfg.port}/websocket/"
+        self.render(
+            "index.html",
+            title="LBCS",
+            header="Little Bull Climbing Server",
+            cfg=self.cfg,
+            state=self.leds,
+            computed_indices=self.led_index_mapping,
+            websocket_url=websocket_url
+        )
 
 
 def rndrgbtriple():
@@ -256,7 +268,7 @@ class LBCSServer(tornado.web.Application):
         ctx = dict(q=q, cfg=cfg, leds=leds, pixels=pixels, led_index_mapping=led_index_mapping, **asdict(cfg))
 
         handlers = (
-            (r"/websocket/", DebugGridWebSocketHandler, {"q": q}),
+            (r"/websocket/", DebugGridWebSocketHandler, {"q": q}, 'websocket'),
             (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
             (r"/state/([0-9]+)/([0-9]{3})/([0-9]{3})/([0-9]{3})/", StateHandler, ctx),

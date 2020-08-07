@@ -1,4 +1,5 @@
 const allStateUrl = document.currentScript.getAttribute("allStateUrl")
+const websocketUrl = document.currentScript.getAttribute("websocketUrl")
 
 
 document.addEventListener("DOMContentLoaded", function(_) {
