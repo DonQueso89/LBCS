@@ -1,13 +1,12 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {Asset} from "expo-asset"
-import { useWindowDimensions, View, StyleSheet } from "react-native";
+import { useWindowDimensions, View, StyleSheet, TouchableWithoutFeedback } from "react-native";
 import Constants from "expo-constants";
 import LBCSApi from "./api";
 import FlashMessage, { showMessage } from "react-native-flash-message";
 import * as R from "ramda";
 
 import { Avatar, Appbar, Menu, TextInput } from "react-native-paper";
-import Grid from "./components/Grid"
 import Canvas, { Image } from "react-native-canvas"
 
 
@@ -24,27 +23,39 @@ export default function App() {
     `http://${HOST}:8888/`
   );
   const windowDimensions = useWindowDimensions();
+  const [cellWidth, cellHeight] = [windowDimensions.width / cols, windowDimensions.width / rows]
+  const [coordinateLednumberMapping, setCoordinateLednumberMapping] = useState({})
+  const [forceRedrawCounter, setForceRedrawCounter] = useState(0)
+  const canvasRef = useRef(null)
 
-  const initCanvas = (canvas) => {
+  const initCanvas = () => {
+    const canvas = canvasRef.current
     if (rows && cols && canvas) {
       canvas.width = windowDimensions.width
       canvas.height = windowDimensions.width
-      const img = new Image(canvas, windowDimensions.width, windowDimensions.width)
-      img.src = Asset.fromModule(require('./assets/climbwall.jpg')).uri
-      const [cellWidth, cellHeight] = [canvas.width / cols, canvas.height / rows]
-      console.log(cellHeight, cellWidth)
       const ctx = canvas.getContext('2d');
+      const img = new Image(canvas, 1, 1)
+      img.src = Asset.fromModule(require('./assets/proto.jpeg')).uri
       
       img.addEventListener("load", () => {
+        const mapping = {}
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
         Array(rows).fill(null).map((_, y) => Array(cols).fill(null).map((_, x) => {
-          ctx.strokeRect(x * cellWidth, y * cellHeight, cellWidth, cellHeight);
+          const ledNumber = y * cols + x
+          const [gridX, gridY] = [x * cellWidth, y * cellHeight]
+          mapping[(`${gridX}${gridY}`).toString()] = ledNumber
+
+          const [red, green, blue] = gridState[ledNumber] || [0, 0, 0]
+          ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, .3)`
+          ctx.fillRect(gridX, gridY, cellWidth, cellHeight);
+          ctx.fillStyle = null
         }))
+
+        setCoordinateLednumberMapping(mapping)
       })
 
     }
   }
-
 
   const syncWithServer = async () => {
     /* Load grid state and dimensions */
@@ -59,6 +70,9 @@ export default function App() {
       setGridState(data);
       setRows(data.rows);
       setCols(data.columns);
+      setForceRedrawCounter(x => {
+        return x + 1;
+      })
     }
   };
 
@@ -66,12 +80,22 @@ export default function App() {
     syncWithServer();
   }, [lbcsApi]);
 
-  const handleToggle = (ledNumber: number, red: number, green: number, blue: number) => {
+  useEffect(() => {
+    initCanvas()
+  }, [forceRedrawCounter])
+
+  const handleToggle = (e) => {
+    const cellX = Math.floor(e.nativeEvent.locationX / cellWidth) * cellWidth
+    const cellY = Math.floor(e.nativeEvent.locationY / cellHeight) * cellHeight
+    const ledNumber = coordinateLednumberMapping[(`${cellX}${cellY}`).toString()]
+
     setGridState(prevState => {
       const newState = { ...prevState };
-      const value = newState[ledNumber];
-
-      const newColor = lbcsApi.setLed(ledNumber, red, green, blue).then(response => {
+      const [red, green, blue] = newState[ledNumber];
+      const isOn = [red, green, blue].reduce((a,b) => a+b)
+      const rndColor = () => Math.floor(Math.random() * 255)
+      const newColor = isOn ? [0, 0, 0] : [rndColor(), rndColor(), rndColor()]
+      lbcsApi.setLed(ledNumber, ...newColor).then(response => {
         if (!response.ok) {
           showMessage({
             message: `Something went wrong while toggling ${ledNumber}`,
@@ -79,9 +103,11 @@ export default function App() {
           });
         }
       });
-      newState[ledNumber] = [red, green, blue];
+      newState[ledNumber] = newColor;
+
       return newState;
     });
+    setForceRedrawCounter(x => x + 1)
   };
 
   const handleServerUrl = useCallback(
@@ -121,15 +147,11 @@ export default function App() {
           onChangeText={handleServerUrl}
         />
       </Appbar.Header>
-      {/*
-      <Grid
-        rows={rows}
-        cols={cols}
-        gridState={gridState}
-        handleToggle={handleToggle}
-      />
-      */}
-      <Canvas ref={initCanvas} />
+      <TouchableWithoutFeedback onPress={handleToggle}>
+        <View>
+          <Canvas ref={canvasRef} />
+        </View>
+      </TouchableWithoutFeedback>
       <FlashMessage position={"top"} />
     </View>
   );
