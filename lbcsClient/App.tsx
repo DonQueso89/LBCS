@@ -28,31 +28,42 @@ export default function App() {
   const [forceRedrawCounter, setForceRedrawCounter] = useState(0)
   const canvasRef = useRef(null)
 
-  const initCanvas = () => {
+  const initBackgroundCanvas = useCallback((backgroundCanvas) =>  {
+    if (rows && cols && backgroundCanvas) {
+      backgroundCanvas.width = windowDimensions.width
+      backgroundCanvas.height = windowDimensions.width
+      const ctx = backgroundCanvas.getContext('2d');
+      const img = new Image(backgroundCanvas, 1, 1)
+      img.src = Asset.fromModule(require('./assets/proto.jpeg')).uri
+      
+      img.addEventListener("load", () => {
+        const mapping = {}
+        ctx.drawImage(img, 0, 0, backgroundCanvas.width, backgroundCanvas.height)
+      })
+
+    }
+  }, [])
+
+  const initGridCanvas = () => {
     const canvas = canvasRef.current
     if (rows && cols && canvas) {
       canvas.width = windowDimensions.width
       canvas.height = windowDimensions.width
       const ctx = canvas.getContext('2d');
-      const img = new Image(canvas, 1, 1)
-      img.src = Asset.fromModule(require('./assets/proto.jpeg')).uri
       
-      img.addEventListener("load", () => {
-        const mapping = {}
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-        Array(rows).fill(null).map((_, y) => Array(cols).fill(null).map((_, x) => {
-          const ledNumber = y * cols + x
-          const [gridX, gridY] = [x * cellWidth, y * cellHeight]
-          mapping[(`${gridX}${gridY}`).toString()] = ledNumber
+      const mapping = {}
+      Array(rows).fill(null).map((_, y) => Array(cols).fill(null).map((_, x) => {
+        const ledNumber = y * cols + x
+        const [gridX, gridY] = [x * cellWidth, y * cellHeight]
+        mapping[(`${gridX}${gridY}`).toString()] = ledNumber
 
-          const [red, green, blue] = gridState[ledNumber] || [0, 0, 0]
-          ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, .3)`
-          ctx.fillRect(gridX, gridY, cellWidth, cellHeight);
-          ctx.fillStyle = null
-        }))
+        const [red, green, blue] = gridState[ledNumber] || [0, 0, 0]
+        ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, .3)`
+        ctx.fillRect(gridX, gridY, cellWidth, cellHeight);
+        ctx.fillStyle = null
+      }))
 
-        setCoordinateLednumberMapping(mapping)
-      })
+      setCoordinateLednumberMapping(mapping)
 
     }
   }
@@ -81,7 +92,7 @@ export default function App() {
   }, [lbcsApi]);
 
   useEffect(() => {
-    initCanvas()
+    initGridCanvas()
   }, [forceRedrawCounter])
 
   const handleToggle = (e) => {
@@ -104,10 +115,16 @@ export default function App() {
         }
       });
       newState[ledNumber] = newColor;
+      const [newRed, newGreen, newBlue] = newColor
+      const ctx = canvasRef.current.getContext("2d")
+      ctx.clearRect(cellX, cellY, cellWidth, cellHeight)
+
+      ctx.fillStyle = `rgba(${newRed}, ${newGreen}, ${newBlue}, .3)`
+      ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
+
 
       return newState;
     });
-    setForceRedrawCounter(x => x + 1)
   };
 
   const handleServerUrl = useCallback(
@@ -149,7 +166,8 @@ export default function App() {
       </Appbar.Header>
       <TouchableWithoutFeedback onPress={handleToggle}>
         <View>
-          <Canvas ref={canvasRef} />
+          <Canvas ref={initBackgroundCanvas} style={styles.backgroundCanvas}/>
+          <Canvas ref={canvasRef} style={styles.gridCanvas}/>
         </View>
       </TouchableWithoutFeedback>
       <FlashMessage position={"top"} />
@@ -158,6 +176,14 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  backgroundCanvas: {
+    position: "absolute",
+    zIndex: 1,
+  },
+  gridCanvas: {
+    position: "absolute",
+    zIndex: 2,
+  },
   container: {
     flex: 1,
     flexDirection: "column",
