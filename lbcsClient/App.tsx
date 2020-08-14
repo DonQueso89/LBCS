@@ -6,7 +6,7 @@ import LBCSApi from "./api";
 import FlashMessage, { showMessage } from "react-native-flash-message";
 import * as R from "ramda";
 
-import { Avatar, Appbar, Menu, TextInput } from "react-native-paper";
+import { Avatar, Appbar, Menu, TextInput, Provider as PaperProvider, Divider  } from "react-native-paper";
 import Canvas, { Image } from "react-native-canvas"
 
 
@@ -39,10 +39,11 @@ export default function App() {
       img.addEventListener("load", () => {
         const mapping = {}
         ctx.drawImage(img, 0, 0, backgroundCanvas.width, backgroundCanvas.height)
+        initGridCanvas()
       })
 
     }
-  }, [])
+  }, [forceRedrawCounter])
 
   const initGridCanvas = () => {
     const canvas = canvasRef.current
@@ -122,7 +123,6 @@ export default function App() {
       ctx.fillStyle = `rgba(${newRed}, ${newGreen}, ${newBlue}, .3)`
       ctx.fillRect(cellX, cellY, cellWidth, cellHeight);
 
-
       return newState;
     });
   };
@@ -147,24 +147,40 @@ export default function App() {
   );
 
   return (
+    <PaperProvider>
     <View style={styles.container}>
       <Appbar.Header dark={true}>
         <Avatar.Image
           size={48}
           source={
-            "https://cdn3.iconfinder.com/data/icons/animals-105/150/icon_animal_touro-128.png"
+            require("./assets/splash.png")
           }
         />
-        <Appbar.Content title="Little Bull Climbing System" />
+        <Appbar.Content title="LBCS" subtitle={"No wall loaded"} />
+      </Appbar.Header>
+      <Appbar>
         <Appbar.Action icon="sync" onPress={syncWithServer} />
-        <Appbar.Action icon="dots-vertical" onPress={() => null} size={32} />
+        <Menu
+          visible={menuVisible}
+          anchor={<Appbar.Action icon="dots-vertical" onPress={() => setMenuVisible(true)} size={32} />}
+          onDismiss={() => setMenuVisible(false)}
+        >
+          <Menu.Item onPress={() => {}} title="New wall" />
+          <Menu.Item onPress={() => {}} title="Load wall" />
+          <Menu.Item onPress={() => {}} title="Save wall" />
+          <Menu.Item onPress={() => {}} title="Add image" />
+          <Divider />
+          <Menu.Item onPress={() => {}} title="Load Problem" />
+          <Menu.Item onPress={() => {}} title="Save Problem" />
+        </Menu>
         <TextInput
           label="Server"
           value={serverUrlText}
           onChangeText={handleServerUrl}
+          style={{flex: 1}}
         />
-      </Appbar.Header>
-      <TouchableWithoutFeedback onPress={handleToggle}>
+      </Appbar>
+      <TouchableWithoutFeedback onPress={handleToggle} onLongPress={() => alert("Select color")}>
         <View>
           <Canvas ref={initBackgroundCanvas} style={styles.backgroundCanvas}/>
           <Canvas ref={canvasRef} style={styles.gridCanvas}/>
@@ -172,6 +188,7 @@ export default function App() {
       </TouchableWithoutFeedback>
       <FlashMessage position={"top"} />
     </View>
+    </PaperProvider>
   );
 }
 
