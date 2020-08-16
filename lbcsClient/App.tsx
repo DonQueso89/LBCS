@@ -8,9 +8,19 @@ import * as R from "ramda";
 
 import { Avatar, Appbar, Menu, TextInput, Provider as PaperProvider, Divider  } from "react-native-paper";
 import Canvas, { Image } from "react-native-canvas"
+import ImagePickerModal from "./components/ImagePickerModal"
 
 
-const HOST = ""
+const DEFAULT_COLOR = [70, 255, 0] // gbr
+
+const HOST = "raspberrypi.local"
+
+interface Wall {
+  id: string
+  name: string
+  uri?: string
+  server_url?: string
+}
 
 export default function App() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -27,6 +37,15 @@ export default function App() {
   const [coordinateLednumberMapping, setCoordinateLednumberMapping] = useState({})
   const [forceRedrawCounter, setForceRedrawCounter] = useState(0)
   const canvasRef = useRef(null)
+  const [imagePickerVisible, setImagePickerVisible] = useState(false)
+  const [wallImageUri, setWallImageUri] = useState(null)
+  const [wallName, setWallName] = useState(null)
+
+
+  const showImagePicker = () => setImagePickerVisible(true)
+  const hideImagePicker = () => setImagePickerVisible(false)
+  const showMenu = () => setMenuVisible(true)
+  const hideMenu = () => setMenuVisible(false)
 
   const initBackgroundCanvas = useCallback((backgroundCanvas) =>  {
     if (rows && cols && backgroundCanvas) {
@@ -34,7 +53,7 @@ export default function App() {
       backgroundCanvas.height = windowDimensions.width
       const ctx = backgroundCanvas.getContext('2d');
       const img = new Image(backgroundCanvas, 1, 1)
-      img.src = Asset.fromModule(require('./assets/proto.jpeg')).uri
+      img.src = wallImageUri || Asset.fromModule(require('./assets/proto.jpeg')).uri
       
       img.addEventListener("load", () => {
         const mapping = {}
@@ -43,7 +62,7 @@ export default function App() {
       })
 
     }
-  }, [forceRedrawCounter])
+  }, [forceRedrawCounter, wallImageUri])
 
   const initGridCanvas = () => {
     const canvas = canvasRef.current
@@ -146,6 +165,17 @@ export default function App() {
     [setServerUrl, setApi, setServerUrlText, serverUrl]
   );
 
+  const handleWallUri = (newUri) => {
+    hideImagePicker()
+    setWallImageUri(newUri)
+  }
+
+  const handleWallReset = () => {
+    hideMenu()
+    setWallImageUri(null)
+    setWallName(null)
+  }
+
   return (
     <PaperProvider>
     <View style={styles.container}>
@@ -156,22 +186,24 @@ export default function App() {
             require("./assets/splash.png")
           }
         />
-        <Appbar.Content title="LBCS" subtitle={"No wall loaded"} />
+        <Appbar.Content title="Little Bull Climbing System" subtitle={wallName ? `Working on: ${wallName}` : "No wall loaded"} />
       </Appbar.Header>
       <Appbar>
         <Appbar.Action icon="sync" onPress={syncWithServer} />
         <Menu
           visible={menuVisible}
-          anchor={<Appbar.Action icon="dots-vertical" onPress={() => setMenuVisible(true)} size={32} />}
-          onDismiss={() => setMenuVisible(false)}
+          anchor={<Appbar.Action icon="dots-vertical" onPress={showMenu} size={32} />}
+          onDismiss={hideMenu}
         >
-          <Menu.Item onPress={() => {}} title="New wall" />
-          <Menu.Item onPress={() => {}} title="Load wall" />
-          <Menu.Item onPress={() => {}} title="Save wall" />
-          <Menu.Item onPress={() => {}} title="Add image" />
+          <Menu.Item icon="wall" onPress={handleWallReset} title="New wall" />
+          <Menu.Item icon="wall" onPress={() => {}} title="Load wall" />
+          <Menu.Item icon="wall" onPress={() => {}} title="Save wall" />
+          <Menu.Item icon="camera" onPress={() => { hideMenu(); showImagePicker(); }} title="Add image" />
           <Divider />
-          <Menu.Item onPress={() => {}} title="Load Problem" />
-          <Menu.Item onPress={() => {}} title="Save Problem" />
+          <Menu.Item icon="map-marker-path" onPress={() => {}} title="Load Problem" />
+          <Menu.Item icon="map-marker-path" onPress={() => {}} title="Save Problem" />
+          <Divider />
+          <Menu.Item icon="settings-outline" onPress={() => {}} title="Settings" />
         </Menu>
         <TextInput
           label="Server"
@@ -180,12 +212,13 @@ export default function App() {
           style={{flex: 1}}
         />
       </Appbar>
-      <TouchableWithoutFeedback onPress={handleToggle} onLongPress={() => alert("Select color")}>
+      <TouchableWithoutFeedback onPress={handleToggle}>
         <View>
           <Canvas ref={initBackgroundCanvas} style={styles.backgroundCanvas}/>
           <Canvas ref={canvasRef} style={styles.gridCanvas}/>
         </View>
       </TouchableWithoutFeedback>
+      <ImagePickerModal handleUpdate={handleWallUri} visible={imagePickerVisible} onDismiss={hideImagePicker} />
       <FlashMessage position={"top"} />
     </View>
     </PaperProvider>
@@ -198,7 +231,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   gridCanvas: {
-    position: "absolute",
+    position: "relative",
     zIndex: 2,
   },
   container: {
