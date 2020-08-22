@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react"
+import React, { useState, useEffect } from "react"
 import { StyleSheet, View, Image }  from "react-native"
 import { Modal, Portal, Button } from "react-native-paper" 
 import Constants from 'expo-constants'
