@@ -20,3 +20,5 @@ poetry install
 ```
 this should install all the dependencies
 
+- cd into the `lbcs` repo and run `poetry server.py` this should start the server up
+
