@@ -1,10 +1,10 @@
 
 import React from "react"
 import { StyleSheet, View }  from "react-native"
-import { Modal, Portal, Drawer, List } from "react-native-paper" 
+import { Modal, Portal, List, Button } from "react-native-paper" 
 
 
-function LoadWallModal({ visible, onDismiss, handleUpdate, walls }) {
+function LoadWallModal({ visible, onDismiss, handleUpdate, handleDelete, walls }) {
     return <Portal>
         <Modal visible={visible} onDismiss={onDismiss} contentContainerStyle={styles.modal} >
           <View style={styles.modalContent}>
@@ -12,6 +12,7 @@ function LoadWallModal({ visible, onDismiss, handleUpdate, walls }) {
             <List.Item
                 style={styles.wallEntry}
                 left={props => <List.Icon {...props} icon="wall" />}
+                right={props => <Button icon="delete" {...props} onPress={() => handleDelete(wall.id)} />}
                 title={wall.name}
                 onPress={() => handleUpdate(wall.id)}
                 key={wall.id}

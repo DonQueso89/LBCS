@@ -12,7 +12,19 @@ interface Wall {
 interface Problem {
   id: string;
   name: string;
+  route: [number, number, number, number][];
 }
+
+const deleteWall = async (id: string): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(id);
+  } catch (e) {
+    showMessage({
+      type: "danger",
+      message: "Something went wrong while deleting wall",
+    });
+  }
+};
 
 const getWalls = async (): Promise<Wall[]> => {
   const walls: string[] = [];
@@ -62,4 +74,4 @@ const saveWall = async (wall: Wall): Promise<string> => {
   return id;
 };
 
-export { loadWall, saveWall, getWalls, Problem, Wall };
+export { loadWall, saveWall, getWalls, deleteWall, Problem, Wall };
