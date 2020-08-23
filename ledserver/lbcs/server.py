@@ -277,7 +277,7 @@ class LBCSServer(tornado.web.Application):
             (r"/state/all/", AllStateHandler, ctx, 'all_leds'),
             (r"/", IndexHandler, ctx),
         )
-        super().__init__(handlers, debug=cfg.debug,  static_path=".")
+        super().__init__(handlers, debug=cfg.debug, static_path=os.path.dirname(os.path.realpath(__file__)))
 
 
 def main():
