@@ -1,28 +1,69 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useContext,
+} from "react";
 import {
   useWindowDimensions,
   View,
   StyleSheet,
   TouchableWithoutFeedback,
 } from "react-native";
-import { NavigationContainer } from "@react-navigation/native"
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import WallManager from "./components/WallManager"
-import Settings from "./components/Settings"
-import { Provider as PaperProvider} from "react-native-paper"
-import { MaterialCommunityIcons } from "react-native-vector-icons"
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import WallManager from "./components/WallManager";
+import SettingsManager, { SettingsContext } from "./components/Settings";
+import { Provider as PaperProvider } from "react-native-paper";
+import { MaterialCommunityIcons } from "react-native-vector-icons";
+import { loadSettings, saveSettings, Settings } from "./storage";
 
 const Tab = createBottomTabNavigator();
 
-
 export default function App() {
+  const [settings, setSettings] = useState({});
+  useEffect(() => {
+    const load = async () => {
+      if (Object.keys(settings).length === 0) {
+        const loadedSettings = await loadSettings();
+        setSettings(loadedSettings);
+      }
+    };
+    load();
+  }, []);
+
+  const handleSettingsUpdate = (newSettings) => {
+    const updatedSettings = Object.assign(settings, newSettings);
+    setSettings(updatedSettings);
+    saveSettings(updatedSettings);
+    console.log("updated settings")
+  };
   return (
     <PaperProvider>
       <NavigationContainer>
-        <Tab.Navigator>
-          <Tab.Screen name="WallManager" component={WallManager} options={{tabBarIcon: () =>  <MaterialCommunityIcons name="wall" size={24} /> }} />
-          <Tab.Screen name="Settings" component={Settings} options={{tabBarIcon: () =>  <MaterialCommunityIcons name="settings" size={24} /> }}/>
-        </Tab.Navigator>
+        <SettingsContext.Provider value={[settings, handleSettingsUpdate]}>
+          <Tab.Navigator>
+            <Tab.Screen
+              name="WallManager"
+              component={WallManager}
+              options={{
+                tabBarIcon: () => (
+                  <MaterialCommunityIcons name="wall" size={24} />
+                ),
+              }}
+            />
+            <Tab.Screen
+              name="Settings"
+              component={SettingsManager}
+              options={{
+                tabBarIcon: () => (
+                  <MaterialCommunityIcons name="settings" size={24} />
+                ),
+              }}
+            />
+          </Tab.Navigator>
+        </SettingsContext.Provider>
       </NavigationContainer>
     </PaperProvider>
   );

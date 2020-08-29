@@ -34,7 +34,6 @@ const DEMO_WALL = {
   id: "DEMO",
 };
 
-const DEFAULT_COLOR = [70, 255, 0]; // gbr
 
 const HOST = "raspberrypi.local";
 const DEFAULT_URL = `http://${HOST}:8888/`;
@@ -53,6 +52,7 @@ const WallManager = () => {
     windowDimensions.width / cols,
     windowDimensions.width / rows,
   ];
+  const [selectedColor, setSelectedColor] = useState("#1aaa61")
   const [coordinateLednumberMapping, setCoordinateLednumberMapping] = useState(
     {}
   );

@@ -2,6 +2,9 @@ import AsyncStorage from "@react-native-community/async-storage";
 import objectid from "bson-objectid";
 import { showMessage } from "react-native-flash-message";
 
+const DEFAULT_COLOR = "#46ff00";
+const SETTINGS_KEY = "SETTINGS";
+
 interface Wall {
   id?: string;
   name?: string;
@@ -16,7 +19,7 @@ interface Problem {
 }
 
 interface Settings {
-  defaultColor: string,
+  defaultColor: string;
 }
 
 const deleteWall = async (id: string): Promise<void> => {
@@ -35,7 +38,9 @@ const getWalls = async (): Promise<Wall[]> => {
   try {
     const keys = await AsyncStorage.getAllKeys();
     const loadedWalls = await AsyncStorage.multiGet(keys);
-    return loadedWalls.map(([_, w]) => JSON.parse(w));
+    return loadedWalls
+      .filter(([k, _]) => k !== SETTINGS_KEY)
+      .map(([_, w]) => JSON.parse(w));
   } catch (e) {
     showMessage({
       type: "danger",
@@ -62,11 +67,11 @@ const loadWall = async (id: string): Promise<Wall | undefined> => {
 
 const loadSettings = async (): Promise<Settings | undefined> => {
   try {
-    const settings = await AsyncStorage.getItem("SETTINGS");
+    const settings = await AsyncStorage.getItem(SETTINGS_KEY);
     if (settings !== null) {
       return JSON.parse(settings);
     }
-    throw new Error();
+    return { defaultColor: DEFAULT_COLOR };
   } catch (e) {
     showMessage({
       message: "Something went wrong while getting settings from device",
@@ -93,4 +98,28 @@ const saveWall = async (wall: Wall): Promise<string> => {
   return id;
 };
 
-export { loadWall, saveWall, getWalls, deleteWall, Problem, Wall };
+const saveSettings = async (settings: Settings): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    showMessage({
+      message: "Settings successfully saved to device",
+      type: "success",
+    });
+  } catch (e) {
+    showMessage({
+      message: "Something went wrong while saving settings to device",
+      type: "danger",
+    });
+  }
+};
+export {
+  loadWall,
+  loadSettings,
+  saveWall,
+  saveSettings,
+  getWalls,
+  deleteWall,
+  Problem,
+  Wall,
+  Settings,
+};
