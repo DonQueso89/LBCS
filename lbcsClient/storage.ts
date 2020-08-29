@@ -15,6 +15,10 @@ interface Problem {
   route: [number, number, number, number][];
 }
 
+interface Settings {
+  defaultColor: string,
+}
+
 const deleteWall = async (id: string): Promise<void> => {
   try {
     await AsyncStorage.removeItem(id);
@@ -51,6 +55,21 @@ const loadWall = async (id: string): Promise<Wall | undefined> => {
   } catch (e) {
     showMessage({
       message: "Something went wrong while getting wall from device",
+      type: "danger",
+    });
+  }
+};
+
+const loadSettings = async (): Promise<Settings | undefined> => {
+  try {
+    const settings = await AsyncStorage.getItem("SETTINGS");
+    if (settings !== null) {
+      return JSON.parse(settings);
+    }
+    throw new Error();
+  } catch (e) {
+    showMessage({
+      message: "Something went wrong while getting settings from device",
       type: "danger",
     });
   }
