@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useContext } from "react";
 import {
   useWindowDimensions,
   View,
@@ -7,10 +7,11 @@ import {
 } from "react-native";
 import Constants from "expo-constants";
 import LBCSApi from "../api";
-import FlashMessage, { showMessage } from "react-native-flash-message";
+import { showMessage } from "react-native-flash-message";
 import * as R from "ramda";
-import { NavigationContainer } from "@react-navigation/native"
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SettingsContext } from "./Settings"
+import { toRGBArray } from "../helpers"
 
 
 import {
@@ -28,7 +29,7 @@ import { saveWall, getWalls, deleteWall } from "../storage";
 import { Asset } from "expo-asset";
 
 const DEMO_WALL = {
-  serverUrl: "http://:8888/",
+  serverUrl: "http://raspberrypi.local:8888/",
   imageUri: Asset.fromModule(require("../assets/proto.jpeg")).uri,
   name: "DEMO",
   id: "DEMO",
@@ -52,7 +53,8 @@ const WallManager = () => {
     windowDimensions.width / cols,
     windowDimensions.width / rows,
   ];
-  const [selectedColor, setSelectedColor] = useState("#1aaa61")
+  const [settings, _] = useContext(SettingsContext)
+  const RGBColor = settings.defaultColor && toRGBArray(settings.defaultColor)
   const [coordinateLednumberMapping, setCoordinateLednumberMapping] = useState(
     {}
   );
@@ -175,8 +177,7 @@ const WallManager = () => {
       const newState = { ...prevState };
       const [red, green, blue] = newState[ledNumber];
       const isOn = [red, green, blue].reduce((a, b) => a + b);
-      const rndColor = () => Math.floor(Math.random() * 255);
-      const newColor = isOn ? [0, 0, 0] : [rndColor(), rndColor(), rndColor()];
+      const newColor = isOn ? [0, 0, 0] : RGBColor;
       lbcsApi.setLed(ledNumber, ...newColor).then((response) => {
         if (!response.ok) {
           showMessage({
@@ -259,6 +260,18 @@ const WallManager = () => {
     setReloadWallsCounter((x) => x + 1);
   };
 
+  const handleWallClear = async () => {
+      lbcsApi.clear().then((response) => {
+        if (!response.ok) {
+          showMessage({
+            message: "Something went wrong while clearing wall",
+            type: "danger",
+          });
+        }
+      });
+      syncWithServer()
+  }
+
   return (
         <View style={styles.container}>
           <Appbar.Header dark={true}>
@@ -270,6 +283,7 @@ const WallManager = () => {
           </Appbar.Header>
           <Appbar>
             <Appbar.Action icon="sync" onPress={syncWithServer} />
+            <Appbar.Action icon="eraser" onPress={handleWallClear} />
             <Menu
               visible={menuVisible}
               anchor={
@@ -349,7 +363,6 @@ const WallManager = () => {
             walls={loadedWalls}
             handleDelete={handleWallDelete}
           />
-          <FlashMessage position={"top"} />
         </View>
   );
 }

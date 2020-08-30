@@ -11,6 +11,7 @@ import {
   StyleSheet,
   TouchableWithoutFeedback,
 } from "react-native";
+import FlashMessage from "react-native-flash-message";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import WallManager from "./components/WallManager";
@@ -34,10 +35,9 @@ export default function App() {
   }, []);
 
   const handleSettingsUpdate = (newSettings) => {
-    const updatedSettings = Object.assign(settings, newSettings);
+    const updatedSettings = {...settings, ...newSettings};
     setSettings(updatedSettings);
     saveSettings(updatedSettings);
-    console.log("updated settings")
   };
   return (
     <PaperProvider>
@@ -64,6 +64,7 @@ export default function App() {
             />
           </Tab.Navigator>
         </SettingsContext.Provider>
+          <FlashMessage position={"top"} />
       </NavigationContainer>
     </PaperProvider>
   );

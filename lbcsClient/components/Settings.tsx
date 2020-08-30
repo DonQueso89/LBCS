@@ -1,15 +1,21 @@
-import React, { useState, useContext, useMemo } from "react";
+import React, { useState, useContext, useMemo, useEffect } from "react";
 import { View, StyleSheet, Text } from "react-native";
 import { ColorPicker, fromHsv, toHsv } from "react-native-color-picker";
 import { Settings } from "../storage";
+import useDebounce from "../hooks/useDebounce"
 
 const SettingsContext = React.createContext({});
 
 const SettingsManager = () => {
   const [settings, updateSettings] = useContext(SettingsContext);
-  const setColor = (color: string) =>
-    updateSettings({ defaultColor: fromHsv(color) });
-  const color = useMemo(() => toHsv(settings.defaultColor), [settings]);
+  const [color, setColor] = useState(toHsv(settings.defaultColor))
+
+  const debouncedColor = useDebounce(color, 500)
+  useEffect(() => {
+      updateSettings({defaultColor: fromHsv(debouncedColor)})
+  }, [debouncedColor])
+
+
 
   console.log(settings);
   return (
