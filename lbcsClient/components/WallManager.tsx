@@ -89,7 +89,6 @@ const WallManager = () => {
         img.src = wall.imageUri || "";
 
         img.addEventListener("load", () => {
-          const mapping = {};
           ctx.drawImage(
             img,
             0,
