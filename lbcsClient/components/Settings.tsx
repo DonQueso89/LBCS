@@ -15,9 +15,6 @@ const SettingsManager = () => {
       updateSettings({defaultColor: fromHsv(debouncedColor)})
   }, [debouncedColor])
 
-
-
-  console.log(settings);
   return (
     <View style={styles.colorPickerContainer}>
       <ColorPicker
