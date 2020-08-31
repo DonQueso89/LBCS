@@ -1,4 +1,4 @@
-# LBCS
+# Little Bull Climbing System
 
 ![Architexture](./architexture.png)
 
