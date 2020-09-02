@@ -130,6 +130,10 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Access-Control-Allow-Origin", "*")
         self.set_header("Content-Type", "application/json")
 
+    def prepare(self):
+        if self.request.headers.get('Content-Type') == 'application/x-json':
+            self.args = json.loads(self.request.body)
+
     def render_grid(self):
         for i in range(self.rows):
             logger.info(
@@ -177,22 +181,25 @@ class AllStateHandler(BaseHandler):
         self.write(json.dumps(state))
     
     def post(self):
-        """Set all unlit leds to a random color"""
+        """Reset the grid and set a complete route"""
         mutations = []
-        for k, v in self.leds.items():
-            if v == (0, 0, 0):
-                rgbtriple = rndrgbtriple()
-                self.leds[k] = rgbtriple
-                self.pixels[self.translate_lednumber(k)] = rgbtriple
-                mutations.append({
-                    'lednumber': k,
-                    'red': rgbtriple[0],
-                    'green': rgbtriple[1],
-                    'blue': rgbtriple[2] 
-                })
+        route = self.args['route']
+        for lednumber in self.leds:
+            red, green, blue = 0, 0, 0
+            if str(lednumber) in route:
+                red, green, blue = [int(x) for x in route[str(lednumber)]]
+            self.leds[lednumber] = (red, green, blue)
+            self.pixels[self.translate_lednumber(lednumber)] = (green, red, blue)
+            mutations.append({
+                'lednumber': lednumber,
+                'red': red,
+                'green': green,
+                'blue': blue 
+            })
         self.pixels.show()
         self.q.put(mutations)
         self.write("")
+        self.render_grid()
     
     def delete(self):
         """Switch off all leds"""
@@ -225,7 +232,7 @@ class StateHandler(BaseHandler):
     def post(self, lednumber, red, green, blue):
         red,  green, blue = int(red), int(green), int(blue)
         lednumber = int(lednumber)
-        triple = (red,  green, blue)
+        triple = (green, red, blue) # neopixel uses grb
 
         _prev_state = self.leds[lednumber]
         self.leds[lednumber] = triple
