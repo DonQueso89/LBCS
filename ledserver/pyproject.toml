@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "lbcs"
-version = "0.10.0"
+version = "0.11.0"
 description = "A small async server for processing led commands to AdaFruit Neopixels"
 authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>"]
 
