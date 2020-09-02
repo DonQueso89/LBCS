@@ -83,7 +83,7 @@ logger = logging.getLogger(__file__)
 try:
     import neopixel
     import board
-except NotImplementedError:
+except (NotImplementedError, ModuleNotFoundError):
     logger.debug("No Neopixel devices found, mocking CircuitPython objects")
     from unittest import mock
     board = mock.MagicMock()

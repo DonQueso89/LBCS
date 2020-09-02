@@ -1,4 +1,6 @@
-# LBCS
+# Little Bull Climbing System
+
+![Architexture](./architexture.png)
 
 ## LBCS client setup
 - install the expo-cli
