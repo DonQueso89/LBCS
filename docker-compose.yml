@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
     backend:
-        build: .
+        build: ./backend
         container_name: api.backend.local
         env_file:
             - .env/app
@@ -30,8 +30,15 @@ services:
             - lbcs_connect
         env_file:
             - .env/db
-    # ledserver:
-    #   # container_name: raspberrypi.local
+    ledserver:
+        build: ./ledserver
+        volumes:
+            - ./ledserver:/srv/app
+        container_name: raspberrypi.local
+        ports:
+          - "127.0.0.1:8888:8888"
+        networks:
+            - lbcs_connect
 networks:
     lbcs_connect:
         name: "lbcs_connect"
