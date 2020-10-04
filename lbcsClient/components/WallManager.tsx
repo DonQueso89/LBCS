@@ -270,6 +270,9 @@ const WallManager = () => {
       });
       syncWithServer()
   }
+  const handleRandomRoute = async () => {
+    console.log("setting random route")
+  }
 
   return (
         <View style={styles.container}>
@@ -283,6 +286,7 @@ const WallManager = () => {
           <Appbar>
             <Appbar.Action icon="sync" onPress={syncWithServer} />
             <Appbar.Action icon="eraser" onPress={handleWallClear} />
+            <Appbar.Action icon="map-marker-path" onPress={handleRandomRoute} />
             <Menu
               visible={menuVisible}
               anchor={

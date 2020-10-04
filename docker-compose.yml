@@ -1,0 +1,35 @@
+version: "3.7"
+
+services:
+    backend:
+        build: .
+        container_name: api.backend.local
+        env_file:
+            - .env/app
+            - .env/db
+        depends_on:
+            - db
+        volumes:
+            - ./backend:/srv/app
+        networks:
+            - lbcs_connect
+        stdin_open: true
+        tty: true
+        ports: 
+            - 127.0.0.1:9999:8080
+    db:
+        image: postgres:13-alpine
+        container_name: db.lbcs.local
+        volumes:
+            - ./init_postgres.sh:/docker-entrypoint-initdb.d/init_postgres.sh
+        networks:
+            - lbcs_connect
+        ports:
+          - "127.0.0.1:5433:5432"
+        networks:
+            - lbcs_connect
+        env_file:
+            - .env/db
+networks:
+    lbcs_connect:
+        name: "lbcs_connect"

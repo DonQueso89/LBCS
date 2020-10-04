@@ -5,12 +5,6 @@ import React, {
   useCallback,
   useContext,
 } from "react";
-import {
-  useWindowDimensions,
-  View,
-  StyleSheet,
-  TouchableWithoutFeedback,
-} from "react-native";
 import FlashMessage from "react-native-flash-message";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
