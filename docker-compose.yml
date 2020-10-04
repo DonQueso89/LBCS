@@ -30,6 +30,8 @@ services:
             - lbcs_connect
         env_file:
             - .env/db
+    # ledserver:
+    #   # container_name: raspberrypi.local
 networks:
     lbcs_connect:
         name: "lbcs_connect"

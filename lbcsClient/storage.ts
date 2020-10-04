@@ -16,6 +16,7 @@ interface Problem {
   id: string;
   name: string;
   route: [number, number, number, number][];
+  dimensions: [number, number];
 }
 
 interface Settings {
