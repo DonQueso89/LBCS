@@ -63,6 +63,7 @@ const WallManager = () => {
   const canvasRef = useRef(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
   const [wall, setWall] = useState({ serverUrl: DEFAULT_URL });
+  const [wall, setProblem] = useState({ serverUrl: DEFAULT_URL });
   const [propsVisible, setPropsVisible] = React.useState(false);
   const [loadWallDialogVisible, setLoadWallDialogVisible] = useState(false);
   const [loadedWalls, setLoadedWalls] = useState([]);
@@ -336,6 +337,12 @@ const WallManager = () => {
                 label="Wall name"
                 value={wall.name}
                 onChangeText={(newName) => setWall({ ...wall, name: newName })}
+                style={{ flex: 1, margin: 0 }}
+              />
+              <TextInput
+                label="Problem name"
+                value={wall.problemname}
+                onChangeText={(newName) => setProblem({ ...wall, name: newName })}
                 style={{ flex: 1, margin: 0 }}
               />
               <Divider />
