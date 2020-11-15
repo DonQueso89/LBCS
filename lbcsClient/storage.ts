@@ -13,10 +13,11 @@ interface Wall {
 }
 
 interface Problem {
-  id: string;
+  id?: string;
   name: string;
-  route: [number, number, number, number][];
-  dimensions: [number, number];
+  gridState: { [key: string]: [number, number, number]};
+  rows: number;
+  columns: number;
 }
 
 interface Settings {
@@ -34,13 +35,13 @@ const deleteWall = async (id: string): Promise<void> => {
   }
 };
 
+
 const getWalls = async (): Promise<Wall[]> => {
-  const walls: string[] = [];
   try {
     const keys = await AsyncStorage.getAllKeys();
     const loadedWalls = await AsyncStorage.multiGet(keys);
     return loadedWalls
-      .filter(([k, _]) => k !== SETTINGS_KEY)
+      .filter(([k, _]) => k !== SETTINGS_KEY && !k.startsWith("P"))
       .map(([_, w]) => JSON.parse(w));
   } catch (e) {
     showMessage({
@@ -48,7 +49,7 @@ const getWalls = async (): Promise<Wall[]> => {
       message: "Something went wrong while getting walls from device",
     });
   }
-  return walls.map((w) => JSON.parse(w));
+  return [];
 };
 
 const loadWall = async (id: string): Promise<Wall | undefined> => {
@@ -82,7 +83,7 @@ const loadSettings = async (): Promise<Settings | undefined> => {
 };
 
 const saveWall = async (wall: Wall): Promise<string> => {
-  const id = wall.id || new objectid().toHexString();
+  const id = wall.id || `W${new objectid().toHexString()}`;
 
   try {
     await AsyncStorage.setItem(id, JSON.stringify({ id, ...wall }));
@@ -113,6 +114,42 @@ const saveSettings = async (settings: Settings): Promise<void> => {
     });
   }
 };
+
+
+const saveProblem = async (problem: Problem): Promise<string> => {
+  const id = problem.id || `P${new objectid().toHexString()}`;
+
+  try {
+    await AsyncStorage.setItem(id, JSON.stringify({ id, ...problem }));
+    showMessage({
+      message: "Problem successfully saved to device",
+      type: "success",
+    });
+  } catch (e) {
+    showMessage({
+      message: "Something went wrong while saving Problem to device",
+      type: "danger",
+    });
+  }
+  return id;
+};
+
+const getProblems = async (): Promise<Problem[]> => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const loadedProblems = await AsyncStorage.multiGet(keys);
+    return loadedProblems
+      .filter(([k, _]) => k !== SETTINGS_KEY && !k.startsWith("W"))
+      .map(([_, p]) => JSON.parse(p));
+  } catch (e) {
+    showMessage({
+      type: "danger",
+      message: "Something went wrong while getting problems from device",
+    });
+  }
+  return [];
+};
+
 export {
   loadWall,
   loadSettings,
@@ -120,6 +157,8 @@ export {
   saveSettings,
   getWalls,
   deleteWall,
+  getProblems,
+  saveProblem,
   Problem,
   Wall,
   Settings,

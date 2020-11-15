@@ -25,19 +25,19 @@ import {
 import Canvas, { Image } from "react-native-canvas";
 import ImagePickerModal from "./ImagePickerModal";
 import LoadWallModal from "./LoadWallModal";
-import { saveWall, getWalls, deleteWall } from "../storage";
+import LoadProblemModal from "./LoadProblemModal";
+import { saveWall, getWalls, deleteWall, getProblems, saveProblem } from "../storage";
 import { Asset } from "expo-asset";
 
+const HOST = "localhost";
+const DEFAULT_URL = `http://${HOST}:8888/`;
+
 const DEMO_WALL = {
-  serverUrl: "http://raspberrypi.local:8888/",
+  serverUrl: DEFAULT_URL,
   imageUri: Asset.fromModule(require("../assets/proto.jpeg")).uri,
   name: "DEMO",
   id: "DEMO",
 };
-
-
-const HOST = "raspberrypi.local";
-const DEFAULT_URL = `http://${HOST}:8888/`;
 
 const Tab = createBottomTabNavigator();
 
@@ -62,9 +62,11 @@ const WallManager = () => {
   const [reloadWallsCounter, setReloadWallsCounter] = useState(0);
   const canvasRef = useRef(null);
   const [imagePickerVisible, setImagePickerVisible] = useState(false);
-  const [wall, setWall] = useState({ serverUrl: DEFAULT_URL });
+  const [wall, setWall] = useState(DEMO_WALL);
+  const [problem, setProblem] = useState({})
   const [propsVisible, setPropsVisible] = React.useState(false);
   const [loadWallDialogVisible, setLoadWallDialogVisible] = useState(false);
+  const [loadProblemDialogVisible, setLoadProblemDialogVisible] = useState(false);
   const [loadedWalls, setLoadedWalls] = useState([]);
 
   const showImagePicker = () => setImagePickerVisible(true);
@@ -77,7 +79,12 @@ const WallManager = () => {
     hideMenu();
     setLoadWallDialogVisible(true);
   };
+  const showProblemLoader = () => {
+    hideMenu();
+    setLoadProblemDialogVisible(true);
+  };
   const hideWallLoader = () => setLoadWallDialogVisible(false);
+  const hideProblemLoader = () => setLoadProblemDialogVisible(false);
 
   const initBackgroundCanvas = useCallback(
     (backgroundCanvas) => {
@@ -142,6 +149,7 @@ const WallManager = () => {
       });
     } else {
       const data = await response.json();
+      console.log(data)
       setGridState(data);
       setRows(data.rows);
       setCols(data.columns);
@@ -166,6 +174,7 @@ const WallManager = () => {
     };
     getWallsFromStorage();
   }, [reloadWallsCounter]);
+  
 
   const handleToggle = (e) => {
     const cellX = Math.floor(e.nativeEvent.locationX / cellWidth) * cellWidth;
@@ -227,6 +236,10 @@ const WallManager = () => {
     setForceRedrawCounter((x) => x + 1);
     setApi(new LBCSApi(DEFAULT_URL));
   };
+  const handleProblemReset = () => {
+    hideMenu();
+    setProblem({ });
+  };
 
   const handleWallSave = async () => {
     if (wall.name === "DEMO") {
@@ -241,6 +254,15 @@ const WallManager = () => {
     }
   };
 
+  const handleProblemSave = async () => {
+     if (!problem.name) {
+      showMessage({ message: "Please set a problem name", type: "info" });
+    } else {
+      const problemId = await saveProblem({ ...problem, gridState, rows, columns: cols });
+      hideMenu();
+    }
+  };
+
   const handleWallLoad = async (wallId: string): Promise<void> => {
     const loadedWall = loadedWalls.find((x) => x.id == wallId) || {
       serverUrl: DEFAULT_URL,
@@ -250,6 +272,21 @@ const WallManager = () => {
     setForceRedrawCounter((x) => x + 1);
     setApi(new LBCSApi(loadedWall.serverUrl));
   };
+  
+  const handleProblemLoad = async (problem: Problem): Promise<void> => {
+    lbcsApi.resetState(problem.gridState).then((response) => {
+      if (!response.ok) {
+        showMessage({
+          message: `Something went wrong while loading problem`,
+          type: "danger",
+        });
+      }
+    });
+    syncWithServer()
+    setProblem(problem);
+    hideProblemLoader();
+    setForceRedrawCounter((x) => x + 1);
+  };
 
   const handleWallDelete = async (wallId: string): Promise<void> => {
     if (wallId === "DEMO") {
@@ -257,6 +294,10 @@ const WallManager = () => {
     }
     deleteWall(wallId);
     setReloadWallsCounter((x) => x + 1);
+  };
+  
+  const handleProblemDelete = async (problemId: string): Promise<void> => {
+    deleteWall(problemId);
   };
 
   const handleWallClear = async () => {
@@ -280,7 +321,7 @@ const WallManager = () => {
             <Avatar.Image size={48} source={require("../assets/splash.png")} />
             <Appbar.Content
               title="Little Bull Climbing System"
-              subtitle={wall.name ? `Working on: ${wall.name}` : "No wall loaded"}
+              subtitle={wall.name ? `Working on: ${[wall.name, problem.name].filter(Boolean).join('/')}` : "No wall loaded"}
             />
           </Appbar.Header>
           <Appbar>
@@ -310,14 +351,15 @@ const WallManager = () => {
                 title="Add image"
               />
               <Divider />
+              <Menu.Item icon="map-marker-path" onPress={handleProblemReset} title="New problem" />
               <Menu.Item
                 icon="map-marker-path"
-                onPress={() => {}}
+                onPress={showProblemLoader}
                 title="Load Problem"
               />
               <Menu.Item
                 icon="map-marker-path"
-                onPress={() => {}}
+                onPress={handleProblemSave}
                 title="Save Problem"
               />
               <Divider />
@@ -340,6 +382,12 @@ const WallManager = () => {
                 label="Wall name"
                 value={wall.name}
                 onChangeText={(newName) => setWall({ ...wall, name: newName })}
+                style={{ flex: 1, margin: 0 }}
+              />
+              <TextInput
+                label="Problem name"
+                value={problem.name || ""}
+                onChangeText={(newName) => setProblem({ ...problem, name: newName })}
                 style={{ flex: 1, margin: 0 }}
               />
               <Divider />
@@ -365,6 +413,12 @@ const WallManager = () => {
             onDismiss={hideWallLoader}
             walls={loadedWalls}
             handleDelete={handleWallDelete}
+          />
+          <LoadProblemModal
+            handleUpdate={handleProblemLoad}
+            visible={loadProblemDialogVisible}
+            onDismiss={hideProblemLoader}
+            handleDelete={handleProblemDelete}
           />
         </View>
   );
