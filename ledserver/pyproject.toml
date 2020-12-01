@@ -2,11 +2,13 @@
 name = "lbcs"
 version = "0.11.0"
 description = "A small async server for processing led commands to AdaFruit Neopixels"
-authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>"]
+authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>", "Rico van Midde <rico.vanmidde@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
 tornado = "^6.0.4"
+humanize = "^3.0.0"
+numpy = "^1.19.2"
 
 [tool.poetry.dev-dependencies]
 isort = "^4.3.21"

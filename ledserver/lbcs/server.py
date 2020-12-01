@@ -26,7 +26,7 @@ CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 OFF = (0, 0, 0)
-
+POEPBRUIN = (9, 6, 9)
 
 def _reverse_mapping(columns, rows):
     reverse_mapping = {}
