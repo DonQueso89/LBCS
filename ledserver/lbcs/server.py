@@ -306,6 +306,7 @@ def main():
     logger.info(f"Parsed server config\n{cfg.pretty()}\n")
     logger.info(f"Starting Little Bull Climbing Server server on port {cfg.port}")
     tornado.ioloop.IOLoop.current().start()
+    logger.info("Little Bull Climbing Server server ready to accept requests")
 
 
 if __name__ == "__main__":

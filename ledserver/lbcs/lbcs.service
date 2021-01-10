@@ -1,0 +1,9 @@
+
+[Unit]
+Description=LBCS Server
+
+[Service]
+ExecStart=/usr/bin/env sudo lbcs-server --config-file=/home/pi/lbcs_config.ini
+
+[Install]
+WantedBy=multi-user.target

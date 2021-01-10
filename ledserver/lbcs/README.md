@@ -9,6 +9,7 @@ Devices that want to connect need to be on the same local network as the host (t
 2) Copy the [example config](./example_config.ini) to the RPI
 3) Replace the values in the config with the ones applicable to your setup
 4) Run `sudo lbcs-server --config-file=<abs path to config>`
+5) Optionally add a sytemctl service (see [service example file](./lbcs.service))
 
 Note that `lbcs-server` must be run as a superuser since the Neopixel requires root access to the underlying hardware.
 
