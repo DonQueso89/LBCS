@@ -268,7 +268,7 @@ class AliveHandler(BaseHandler):
 class LBCSServer(tornado.web.Application):
     def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int], led_index_mapping: Dict[int, int]):
         pixels = neopixel.NeoPixel(
-            getattr(board, cfg.pixel_pin), len(leds), brightness=1, auto_write=False
+            getattr(board, cfg.pixel_pin), len(leds) * 2, brightness=1, auto_write=False
         )
         q: Queue = Queue()
 
