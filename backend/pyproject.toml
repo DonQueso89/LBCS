@@ -9,6 +9,7 @@ python = "^3.8"
 Django = "^3.1.2"
 graphene = "^2.1.8"
 graphene-django = "^2.13.0"
+django-filter = "^2.4.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.6"

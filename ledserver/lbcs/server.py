@@ -35,6 +35,7 @@ def _reverse_mapping(columns, rows):
             reverse_mapping[row * columns + i] = row * columns + col
     return reverse_mapping
 
+
 def right_left_zig_zag(columns, rows, mult=1):
     """Translate a contiguous sequence from top left to bottom right from 0 to n
     to a reversed zigzag sequence"""
@@ -44,9 +45,12 @@ def right_left_zig_zag(columns, rows, mult=1):
         row = lednumber // columns
         if row % 2 == 0:
             led_mapping[lednumber] = reverse_mapping[lednumber] * mult
-        else: 
-            led_mapping[lednumber] = reverse_mapping[(row + 1) * columns - (lednumber % columns) - 1] * mult
+        else:
+            led_mapping[lednumber] = (
+                reverse_mapping[(row + 1) * columns - (lednumber % columns) - 1] * mult
+            )
     return led_mapping
+
 
 def top_bottom_zig_zag(columns, rows, mult=1):
     """Translate a contiguous sequence from top left to bottom right from 0 to n
@@ -58,20 +62,22 @@ def top_bottom_zig_zag(columns, rows, mult=1):
             zigzag[lednumber] = lednumber
         else:
             zigzag[lednumber] = (row + 1) * columns - (lednumber % columns) - 1
-    
+
     # non reversed zigzag rotated 90 degrees clockwise
-    rotated_zigzag = {}     
+    rotated_zigzag = {}
     for y in range(rows):
         for x in range(columns):
             row, column = x, y  # swap row and column
-            column = columns - column - 1 # count column backwards
+            column = columns - column - 1  # count column backwards
             rotated_zigzag[row * columns + column] = zigzag[y * columns + x] * 2
 
     return rotated_zigzag
 
+
 class LedIndexMapAlgo(Enum):
     RIGHT_LEFT_ZIG_ZAG = 0  # right left top bottom zig zag
     TOP_BOTTOM_ZIG_ZAG = 1  # top bottom right left zig zag
+
 
 DEFAULT_CONFIG = os.path.join(
     os.path.abspath(os.path.dirname(__file__)), "example_config.ini"
@@ -86,12 +92,14 @@ try:
 except (NotImplementedError, ModuleNotFoundError):
     logger.debug("No Neopixel devices found, mocking CircuitPython objects")
     from unittest import mock
+
     board = mock.MagicMock()
     neopixel = mock.MagicMock()
 
 
 class DebugGridWebSocketHandler(tornado.websocket.WebSocketHandler):
     """Websocket handler that syncs up the debug grid shown on the index page"""
+
     def initialize(self, q):
         self.q = q
         self.set_header("Access-Control-Allow-Origin", "*")
@@ -131,7 +139,7 @@ class BaseHandler(tornado.web.RequestHandler):
         self.set_header("Content-Type", "application/json")
 
     def prepare(self):
-        if self.request.headers.get('Content-Type') == 'application/x-json':
+        if self.request.headers.get("Content-Type") == "application/x-json":
             self.args = json.loads(self.request.body)
 
     def render_grid(self):
@@ -150,7 +158,13 @@ class BaseHandler(tornado.web.RequestHandler):
 
 
 class IndexHandler(tornado.web.RequestHandler):
-    def initialize(self, cfg: config.LBCSConfig, leds: Dict[int, int], led_index_mapping: Dict[int, int], **ignored):
+    def initialize(
+        self,
+        cfg: config.LBCSConfig,
+        leds: Dict[int, int],
+        led_index_mapping: Dict[int, int],
+        **ignored,
+    ):
         self.cfg = cfg
         self.leds = leds
         self.led_index_mapping = led_index_mapping
@@ -164,7 +178,7 @@ class IndexHandler(tornado.web.RequestHandler):
             cfg=self.cfg,
             state=self.leds,
             computed_indices=self.led_index_mapping,
-            websocket_url=websocket_url
+            websocket_url=websocket_url,
         )
 
 
@@ -179,28 +193,25 @@ class AllStateHandler(BaseHandler):
         state["rows"] = self.rows
         state["columns"] = self.columns
         self.write(json.dumps(state))
-    
+
     def post(self):
         """Reset the grid and set a complete route"""
         mutations = []
-        route = self.args['route']
+        route = self.args["route"]
         for lednumber in self.leds:
             red, green, blue = 0, 0, 0
             if str(lednumber) in route:
                 red, green, blue = [int(x) for x in route[str(lednumber)]]
             self.leds[lednumber] = (red, green, blue)
             self.pixels[self.translate_lednumber(lednumber)] = (green, red, blue)
-            mutations.append({
-                'lednumber': lednumber,
-                'red': red,
-                'green': green,
-                'blue': blue 
-            })
+            mutations.append(
+                {"lednumber": lednumber, "red": red, "green": green, "blue": blue}
+            )
         self.pixels.show()
         self.q.put(mutations)
         self.write("")
         self.render_grid()
-    
+
     def delete(self):
         """Switch off all leds"""
         mutations = []
@@ -208,18 +219,10 @@ class AllStateHandler(BaseHandler):
             if v != (0, 0, 0):
                 self.leds[k] = (0, 0, 0)
                 self.pixels[self.translate_lednumber(k)] = (0, 0, 0)
-                mutations.append({
-                    'lednumber': k,
-                    'red': 0,
-                    'green': 0,
-                    'blue': 0 
-                })
+                mutations.append({"lednumber": k, "red": 0, "green": 0, "blue": 0})
         self.pixels.show()
         self.q.put(mutations)
         self.write("")
-
-
-
 
 
 class StateHandler(BaseHandler):
@@ -230,9 +233,9 @@ class StateHandler(BaseHandler):
         self.write(f"{state}")
 
     def post(self, lednumber, red, green, blue):
-        red,  green, blue = int(red), int(green), int(blue)
+        red, green, blue = int(red), int(green), int(blue)
         lednumber = int(lednumber)
-        triple = (green, red, blue) # neopixel uses grb
+        triple = (green, red, blue)  # neopixel uses grb
 
         _prev_state = self.leds[lednumber]
         self.leds[lednumber] = triple
@@ -240,7 +243,9 @@ class StateHandler(BaseHandler):
         try:
             self.pixels[self.translate_lednumber(lednumber)] = triple
             self.pixels.show()
-            self.q.put([{"lednumber": lednumber, "red": red, "green": green, "blue": blue}])
+            self.q.put(
+                [{"lednumber": lednumber, "red": red, "green": green, "blue": blue}]
+            )
         except Exception as e:
             state_verbose = {(0, 0, 0): "off"}.get(triple, "on")
             logger.error(
@@ -266,25 +271,41 @@ class AliveHandler(BaseHandler):
 
 
 class LBCSServer(tornado.web.Application):
-    def __init__(self, cfg: config.LBCSConfig, leds: Dict[int, int], led_index_mapping: Dict[int, int]):
+    def __init__(
+        self,
+        cfg: config.LBCSConfig,
+        leds: Dict[int, int],
+        led_index_mapping: Dict[int, int],
+    ):
         pixels = neopixel.NeoPixel(
             getattr(board, cfg.pixel_pin), len(leds) * 2, brightness=1, auto_write=False
         )
         q: Queue = Queue()
 
-        ctx = dict(q=q, cfg=cfg, leds=leds, pixels=pixels, led_index_mapping=led_index_mapping, **asdict(cfg))
+        ctx = dict(
+            q=q,
+            cfg=cfg,
+            leds=leds,
+            pixels=pixels,
+            led_index_mapping=led_index_mapping,
+            **asdict(cfg),
+        )
 
         handlers = (
-            (r"/websocket/", DebugGridWebSocketHandler, {"q": q}, 'websocket'),
+            (r"/websocket/", DebugGridWebSocketHandler, {"q": q}, "websocket"),
             (r"/alive/", AliveHandler, ctx),
             (r"/dimensions/", DimensionsHandler, ctx),
             (r"/state/([0-9]+)/([0-9]{3})/([0-9]{3})/([0-9]{3})/", StateHandler, ctx),
             (r"/state/([0-9]+)/", StateHandler, ctx),
             (r"/state/", AllStateHandler, ctx),
-            (r"/state/all/", AllStateHandler, ctx, 'all_leds'),
+            (r"/state/all/", AllStateHandler, ctx, "all_leds"),
             (r"/", IndexHandler, ctx),
         )
-        super().__init__(handlers, debug=cfg.debug, static_path=os.path.dirname(os.path.realpath(__file__)))
+        super().__init__(
+            handlers,
+            debug=cfg.debug,
+            static_path=os.path.dirname(os.path.realpath(__file__)),
+        )
 
 
 def main():
@@ -296,8 +317,12 @@ def main():
     leds = {i: (0, 0, 0) for i in range(cfg.rows * cfg.columns)}
 
     led_index_mapping = {
-        LedIndexMapAlgo.RIGHT_LEFT_ZIG_ZAG.name: lambda: right_left_zig_zag(cfg.columns, cfg.rows, mult=cfg.skip + 1),
-        LedIndexMapAlgo.TOP_BOTTOM_ZIG_ZAG.name: lambda: top_bottom_zig_zag(cfg.columns, cfg.rows, mult=cfg.skip + 1),
+        LedIndexMapAlgo.RIGHT_LEFT_ZIG_ZAG.name: lambda: right_left_zig_zag(
+            cfg.columns, cfg.rows, mult=cfg.skip + 1
+        ),
+        LedIndexMapAlgo.TOP_BOTTOM_ZIG_ZAG.name: lambda: top_bottom_zig_zag(
+            cfg.columns, cfg.rows, mult=cfg.skip + 1
+        ),
     }[cfg.map_algo]()
 
     app = LBCSServer(cfg, leds, led_index_mapping)

@@ -13,6 +13,8 @@ import SettingsManager, { SettingsContext } from "./components/Settings";
 import { Provider as PaperProvider } from "react-native-paper";
 import { MaterialCommunityIcons } from "react-native-vector-icons";
 import { loadSettings, saveSettings, Settings } from "./storage";
+import client from "./graphql/apolloClient";
+import { ApolloProvider } from "@apollo/client";
 
 const Tab = createBottomTabNavigator();
 
@@ -29,37 +31,39 @@ export default function App() {
   }, []);
 
   const handleSettingsUpdate = (newSettings) => {
-    const updatedSettings = {...settings, ...newSettings};
+    const updatedSettings = { ...settings, ...newSettings };
     setSettings(updatedSettings);
     saveSettings(updatedSettings);
   };
   return (
-    <PaperProvider>
-      <NavigationContainer>
-        <SettingsContext.Provider value={[settings, handleSettingsUpdate]}>
-          <Tab.Navigator>
-            <Tab.Screen
-              name="WallManager"
-              component={WallManager}
-              options={{
-                tabBarIcon: () => (
-                  <MaterialCommunityIcons name="wall" size={24} />
-                ),
-              }}
-            />
-            <Tab.Screen
-              name="Settings"
-              component={SettingsManager}
-              options={{
-                tabBarIcon: () => (
-                  <MaterialCommunityIcons name="settings" size={24} />
-                ),
-              }}
-            />
-          </Tab.Navigator>
-        </SettingsContext.Provider>
+    <ApolloProvider client={client}>
+      <PaperProvider>
+        <NavigationContainer>
+          <SettingsContext.Provider value={[settings, handleSettingsUpdate]}>
+            <Tab.Navigator>
+              <Tab.Screen
+                name="WallManager"
+                component={WallManager}
+                options={{
+                  tabBarIcon: () => (
+                    <MaterialCommunityIcons name="wall" size={24} />
+                  ),
+                }}
+              />
+              <Tab.Screen
+                name="Settings"
+                component={SettingsManager}
+                options={{
+                  tabBarIcon: () => (
+                    <MaterialCommunityIcons name="settings" size={24} />
+                  ),
+                }}
+              />
+            </Tab.Navigator>
+          </SettingsContext.Provider>
           <FlashMessage position={"top"} />
-      </NavigationContainer>
-    </PaperProvider>
+        </NavigationContainer>
+      </PaperProvider>
+    </ApolloProvider>
   );
 }

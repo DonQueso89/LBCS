@@ -10,4 +10,5 @@ def login_required(func):
         if args[resolve_info_idx].context.user.is_authenticated:
             return func(*args, **kwargs)
         raise PermissionDenied
+
     return wrapper

@@ -4,9 +4,10 @@ from graphene.types import resolver
 
 from users.auth import login_required
 from users import graphql_schema as user_schema
+from problems import graphql_schema as problem_schema
 
 
-class Query(user_schema.Query, graphene.ObjectType):
+class Query(problem_schema.Query, user_schema.Query, graphene.ObjectType):
     node = relay.Node.Field()
 
     class Meta:
