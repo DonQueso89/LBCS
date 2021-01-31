@@ -1,0 +1,9 @@
+query getProblems { 
+	problems {
+    edges {
+      node {
+        name
+      }
+    }
+  }
+}
