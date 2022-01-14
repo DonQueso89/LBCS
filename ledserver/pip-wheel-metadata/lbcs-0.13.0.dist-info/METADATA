@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: lbcs
+Version: 0.13.0
+Summary: A small async server for processing led commands to AdaFruit Neopixels
+Author: Kees van Ekeren
+Author-email: kg.v.ekeren@gmail.com
+Requires-Python: >=3.7,<4.0
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Requires-Dist: tornado (>=6.0.4,<7.0.0)

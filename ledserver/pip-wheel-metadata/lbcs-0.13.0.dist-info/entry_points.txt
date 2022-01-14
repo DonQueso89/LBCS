@@ -1,0 +1,3 @@
+[console_scripts]
+lbcs-server=lbcs.server:main
+
