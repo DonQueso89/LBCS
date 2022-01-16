@@ -21,3 +21,29 @@ npm install -g expo-cli
 makes the backend available at `9999` and the ledserver at `8888`
 
 The ledserver has a simple HTML UI which simulates the changes applied to the board.
+
+## Deployment
+
+### ledserver
+
+The ledserver is available as a Python package on [pypi](https://pypi.org/project/lbcs/) and should be installed on an RPI together
+with the libraries for controlling the ledstrips.
+
+(on the RPI)
+
+- `sudo pip3 install adafruit-circuitpython-neopixel`
+- `pip3 install lbcs`
+- run the server with `lbcs-server --config_file <abs-path-to-config>`
+
+If no custom config file is provided, [the example config](./ledserver/lbcs/example_config.ini) is used.
+
+### backend
+
+We currently deploy the backend to Azure App Service manually.
+
+`az webapp up` for (re)deployment
+`az webapp config appsettings set --settings K=V` for env var configuration
+
+### mobile client
+
+TODO

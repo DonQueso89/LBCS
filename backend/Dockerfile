@@ -1,11 +1,11 @@
-FROM python:3.8-slim
-RUN apt -y update && apt -y install libpq-dev curl
-RUN pip install poetry
-ENV PATH="/root/.poetry/bin:${PATH}"
-COPY ./poetry.lock ./pyproject.toml /code/
-WORKDIR /code
-RUN poetry config virtualenvs.create false \
-    && poetry install --no-interaction --no-ansi
-
+FROM python:3.9-slim
+RUN pip install -U pip
+RUN apt update
+RUN apt install -y python3-setuptools
+RUN mkdir -p /srv/app
 WORKDIR /srv/app
+# repo will be mounted here
+VOLUME /srv/app
+EXPOSE 9999
+
 ENTRYPOINT ["/bin/bash", "/srv/app/.boot.sh"]

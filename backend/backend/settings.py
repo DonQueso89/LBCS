@@ -39,9 +39,6 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_extensions",
     "django_filters",
-    "graphene_django",
-    "users.apps.UsersConfig",
-    "problems.apps.ProblemsConfig",
 ]
 
 MIDDLEWARE = [
@@ -55,9 +52,6 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "backend.urls"
-
-
-GRAPHENE = {"SCHEMA": "backend.graphql_schema.schema"}
 
 TEMPLATES = [
     {
@@ -113,8 +107,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-AUTH_USER_MODEL = "users.LBCSUser"
 
 # Internationalization
 # https://docs.djangoproject.com/en/3.1/topics/i18n/
