@@ -1,6 +1,6 @@
 asgiref==3.4.1
 backports.zoneinfo==0.2.1
-django==4.0
+django==3.2.11
 django-filter==2.4.0
 psycopg2-binary==2.9.3
 sqlparse==0.4.2
