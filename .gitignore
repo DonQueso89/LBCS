@@ -9,6 +9,7 @@ lbcsClient/node_modules
 /coverage
 
 # production
+.azure
 /build
 
 __pycache__
