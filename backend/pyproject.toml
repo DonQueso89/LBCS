@@ -6,7 +6,7 @@ authors = ["Kees van Ekeren <kg.v.ekeren@gmail.com>"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-Django = "4.0.0"
+Django = "4.0.7"
 django-filter = "^2.4.0"
 django-extensions = "^3.0.9"
 psycopg2-binary = "^2.8.6"
